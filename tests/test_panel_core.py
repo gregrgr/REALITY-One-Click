@@ -51,11 +51,11 @@ class PanelCoreTest(unittest.TestCase):
             self.assertIn("DOMAIN-SUFFIX,chatgpt.com,Proxy", clash["rules"])
             self.assertIn("DOMAIN-SUFFIX,openai.com,Proxy", clash["rules"])
             self.assertIn("DOMAIN-SUFFIX,figma.com,Proxy", clash["rules"])
-            self.assertIn("GEOSITE,cn,DIRECT", clash["rules"])
             self.assertIn("GEOIP,CN,DIRECT,no-resolve", clash["rules"])
+            self.assertFalse(any(rule.startswith("GEOSITE,") for rule in clash["rules"]))
             self.assertLess(
                 clash["rules"].index("DOMAIN-SUFFIX,chatgpt.com,Proxy"),
-                clash["rules"].index("GEOSITE,cn,DIRECT"),
+                clash["rules"].index("GEOIP,CN,DIRECT,no-resolve"),
             )
             self.assertEqual(clash["rules"][-1], "MATCH,Final")
             self.assertIn("dns", clash)
@@ -65,6 +65,8 @@ class PanelCoreTest(unittest.TestCase):
             self.assertEqual(clash["dns"]["use-system-hosts"], False)
             self.assertIn("#Proxy", clash["dns"]["nameserver-policy"]["+.chatgpt.com"][0])
             self.assertIn("+.claude.ai", clash["dns"]["fallback-filter"]["domain"])
+            self.assertNotIn("geosite", clash["dns"]["fallback-filter"])
+            self.assertFalse(any(key.startswith("geosite:") for key in clash["dns"]["nameserver-policy"]))
             self.assertEqual(clash["dns"]["proxy-server-nameserver"][0], "https://dns.alidns.com/dns-query")
 
             uri = vless_uri(database.get_settings(), user)

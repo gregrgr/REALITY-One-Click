@@ -52,8 +52,6 @@ CLASH_LOCAL_DIRECT_RULES = [
     "IP-CIDR6,::1/128,DIRECT,no-resolve",
     "IP-CIDR6,fc00::/7,DIRECT,no-resolve",
     "IP-CIDR6,fe80::/10,DIRECT,no-resolve",
-    "GEOSITE,private,DIRECT",
-    "GEOSITE,cn,DIRECT",
     "GEOIP,CN,DIRECT,no-resolve",
 ]
 
@@ -66,10 +64,7 @@ def build_force_proxy_rules(group_name: str) -> list[str]:
 
 
 def build_dns_policy() -> dict[str, list[str]]:
-    policy = {
-        "geosite:cn": CLASH_DOMESTIC_DNS,
-        "geosite:private": CLASH_DOMESTIC_DNS,
-    }
+    policy: dict[str, list[str]] = {}
     for domain in CLASH_FORCE_PROXY_DOMAIN_SUFFIXES:
         policy[f"+.{domain}"] = CLASH_PROXY_DNS
     return policy
@@ -149,9 +144,6 @@ def clash_yaml(settings: dict[str, str], user: Any) -> str:
             "fallback-filter": {
                 "geoip": True,
                 "geoip-code": "CN",
-                "geosite": [
-                    "geolocation-!cn",
-                ],
                 "domain": [
                     f"+.{domain}"
                     for domain in CLASH_FORCE_PROXY_DOMAIN_SUFFIXES

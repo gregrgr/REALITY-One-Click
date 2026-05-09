@@ -268,14 +268,14 @@ https://panel.example.com/sub/<token>/vless.txt
 - `proxies`
 - `proxy-groups`
 - `rules`
-- 本地分流规则：局域网、私有地址、本地域名、`GEOSITE,cn`、`GEOIP,CN` 走 `DIRECT`。
+- 本地分流规则：局域网、私有地址、本地域名和 `GEOIP,CN` 走 `DIRECT`。
 - 强制代理规则：Claude、ChatGPT/OpenAI、Figma 相关域名始终走 `Proxy`，并且优先级高于国内直连规则。
 - DNS 防泄漏：启用 `tun.dns-hijack`、`strict-route`、`respect-rules`，强制代理域名使用带 `#Proxy` 的 DoH 解析。
 - 兜底策略：未命中的流量走 `Final`，默认选择 `Proxy`。
 - 内置 DNS：国内 DoH nameserver、海外 fallback、fake-ip 过滤局域网域名。
 - REALITY 必需参数：`servername`、`client-fingerprint`、`reality-opts.public-key`、`reality-opts.short-id`
 
-订阅不使用远程 `rule-providers`，客户端导入后即可本地分流。
+订阅不使用远程 `rule-providers`，也不使用 `GEOSITE` 规则，避免客户端/Nikki 因下载或解析 `GeoSite.dat` 失败而拒绝配置。客户端导入后即可从订阅服务器获取完整配置。
 
 DNS 防泄漏依赖客户端支持 Mihomo/Clash Meta 的 TUN 与 DNS 配置。若客户端禁用 TUN、系统私有 DNS、浏览器内置 DoH 或平台限制阻止 DNS 劫持，仍可能出现客户端侧 DNS 泄漏，需要在客户端关闭这些外部 DNS 路径。
 
