@@ -33,7 +33,7 @@ Environment variables for non-interactive installs:
   ADMIN_USER         Default: admin
   ADMIN_PASSWORD     Default: generated strong password
   NODE_NAME          Optional override. Default: vps-reality-01
-  PUBLIC_HOST        Optional override. Default: PANEL_DOMAIN
+  PUBLIC_HOST        Optional override. Default: auto-detected public IPv4.
   XRAY_PUBLIC_PORT   Optional override. Default: 443
   XRAY_LISTEN        Optional override. Default: 0.0.0.0
   XRAY_PORT          Optional override. Default: 443

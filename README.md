@@ -38,14 +38,14 @@ bash install.sh --assume-yes
 
 交互式安装时，VPS 本机监听地址和端口会直接使用默认值，不再逐项询问：
 
-- `PUBLIC_HOST` 默认等于 `PANEL_DOMAIN`
+- `PUBLIC_HOST` 默认自动探测 VPS 公网 IPv4，订阅里的代理地址直接使用公网 IP。
 - `XRAY_LISTEN=0.0.0.0`
 - `XRAY_PORT=443`
 - `PANEL_HTTPS_PORT=8443`
 - `XRAY_API_HOST=127.0.0.1`
 - `XRAY_API_PORT=10085`
 
-需要自定义时再通过环境变量覆盖即可。
+需要自定义时再通过环境变量覆盖即可，例如 `PUBLIC_HOST=1.2.3.4 bash install.sh`。
 
 Cloudflare DNS API 证书签发示例：
 
@@ -107,7 +107,7 @@ REALITY 本身不依赖本机域名证书。它需要生成 X25519 私钥/公钥
 推荐准备一个独立域名或子域名指向 VPS：
 
 - `panel.example.com`：管理后端和订阅接口。
-- Xray REALITY 客户端连接地址可以使用服务器 IP 或用户输入的节点域名。
+- Xray REALITY 客户端连接地址默认使用服务器公网 IP。
 
 ### 端口设计
 

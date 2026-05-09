@@ -145,6 +145,29 @@ reality_server_from_dest() {
   printf '%s' "${dest%%:*}"
 }
 
+detect_public_ipv4() {
+  local endpoints=(
+    "https://api.ipify.org"
+    "https://ifconfig.me/ip"
+    "https://icanhazip.com"
+  )
+  local endpoint ip
+
+  if [[ "$DRY_RUN" == "1" ]] || ! command_exists curl; then
+    return 1
+  fi
+
+  for endpoint in "${endpoints[@]}"; do
+    ip="$(curl -4fsS --max-time 5 "$endpoint" 2>/dev/null | tr -d '[:space:]' || true)"
+    if [[ "$ip" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+      printf '%s\n' "$ip"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
 collect_install_config() {
   local migrate_split_arch=0
   if [[ -r "$ENV_FILE" ]] && ! grep -q '^PANEL_HTTPS_PORT=' "$ENV_FILE"; then
@@ -173,7 +196,14 @@ collect_install_config() {
   fi
 
   set_default NODE_NAME "vps-reality-01"
-  set_default PUBLIC_HOST "$PANEL_DOMAIN"
+  if [[ -z "${PUBLIC_HOST:-}" ]]; then
+    PUBLIC_HOST="$(detect_public_ipv4 || true)"
+    if [[ -z "$PUBLIC_HOST" ]]; then
+      warn "Could not detect public IPv4; falling back PUBLIC_HOST to PANEL_DOMAIN."
+      PUBLIC_HOST="$PANEL_DOMAIN"
+    fi
+    export PUBLIC_HOST
+  fi
   if [[ "$migrate_split_arch" == "1" && "${XRAY_LISTEN:-}" == "127.0.0.1" && "${XRAY_PORT:-}" == "1443" ]]; then
     XRAY_LISTEN="0.0.0.0"
     XRAY_PORT="443"

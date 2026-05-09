@@ -13,7 +13,7 @@ The generated Xray configuration is written to `/etc/xray/config.json`.
 | --- | --- |
 | `panel_domain` | HTTPS domain for the admin panel and subscriptions. |
 | `panel_https_port` | HTTPS port for the admin panel and subscriptions. Defaults to `8443`. |
-| `public_host` | Hostname clients connect to. Defaults to `panel_domain`. |
+| `public_host` | Host or IP clients connect to. Defaults to the auto-detected public IPv4, falling back to `panel_domain`. |
 | `public_port` | Public client port. Defaults to `443`. |
 | `xray_listen` | Xray REALITY listen address. Defaults to `0.0.0.0`. |
 | `xray_port` | Xray REALITY listen port. Defaults to `443`. |
@@ -73,5 +73,11 @@ https://panel.example.com:8443
 The proxy entry remains:
 
 ```text
-panel.example.com:443
+<server-public-ip>:443
+```
+
+To force a specific proxy address:
+
+```bash
+PUBLIC_HOST=203.0.113.10 bash install.sh
 ```

@@ -23,6 +23,8 @@ journalctl -u xray -n 100 --no-pager
 
 The client connection host is usually the panel domain, but the REALITY SNI must be the configured `reality_server_name`.
 
+Current default subscriptions use the VPS public IP as the proxy `server`, while the panel domain is only used for the admin and subscription URL.
+
 ## TLS Handshake Failure on Port 443
 
 If the client reports:
@@ -40,14 +42,14 @@ curl -ks https://proxy.example.com:8443/sub/<token>/clash.yaml | grep -E 'server
 This is wrong:
 
 ```yaml
-server: proxy.example.com
+server: 203.0.113.10
 servername: proxy.example.com
 ```
 
-The `server` may be the panel domain, but `servername` must be a REALITY camouflage SNI such as:
+The `server` may be the VPS public IP, but `servername` must be a REALITY camouflage SNI such as:
 
 ```yaml
-server: proxy.example.com
+server: 203.0.113.10
 servername: www.microsoft.com
 ```
 
