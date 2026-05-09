@@ -35,8 +35,9 @@ Environment variables for non-interactive installs:
   NODE_NAME          Optional override. Default: vps-reality-01
   PUBLIC_HOST        Optional override. Default: PANEL_DOMAIN
   XRAY_PUBLIC_PORT   Optional override. Default: 443
-  XRAY_LISTEN        Optional override. Default: 127.0.0.1
-  XRAY_PORT          Optional override. Default: 1443
+  XRAY_LISTEN        Optional override. Default: 0.0.0.0
+  XRAY_PORT          Optional override. Default: 443
+  PANEL_HTTPS_PORT   Optional override. Default: 8443
   REALITY_DEST       Optional override. Default: www.microsoft.com:443
   REALITY_SERVERNAME Optional override. Default: REALITY_DEST host
   XRAY_API_HOST      Optional override. Default: 127.0.0.1
@@ -96,9 +97,9 @@ main() {
   log "Requesting HTTPS certificate"
   install_certificate
 
-  log "Rendering Nginx TLS and stream config"
+  log "Rendering Nginx panel HTTPS config"
   render_nginx_tls_config
-  render_nginx_stream_config
+  disable_nginx_stream_config
   reload_or_start_nginx
 
   log "Installing management backend"

@@ -9,6 +9,6 @@ server {
     }
 
     location / {
-        return 301 https://$host$request_uri;
+        return 301 https://$host:__PANEL_HTTPS_PORT__$request_uri;
     }
 }

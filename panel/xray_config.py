@@ -6,8 +6,8 @@ from typing import Any
 
 
 def build_xray_config(settings: dict[str, str], users: list[Any]) -> dict[str, Any]:
-    listen = settings.get("xray_listen", "127.0.0.1")
-    port = int(settings.get("xray_port", "1443"))
+    listen = settings.get("xray_listen", "0.0.0.0")
+    port = int(settings.get("xray_port", "443"))
     api_host = settings.get("xray_api_host", "127.0.0.1")
     api_port = int(settings.get("xray_api_port", "10085"))
     reality_dest = settings.get("reality_dest", "www.microsoft.com:443")

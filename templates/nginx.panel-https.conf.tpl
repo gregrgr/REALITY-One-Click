@@ -9,12 +9,13 @@ server {
     }
 
     location / {
-        return 301 https://$host$request_uri;
+        return 301 https://$host:__PANEL_HTTPS_PORT__$request_uri;
     }
 }
 
 server {
-    listen 127.0.0.1:8443 ssl http2;
+    listen __PANEL_HTTPS_PORT__ ssl http2;
+    listen [::]:__PANEL_HTTPS_PORT__ ssl http2;
     server_name __PANEL_DOMAIN__;
 
     ssl_certificate /etc/letsencrypt/live/__PANEL_DOMAIN__/fullchain.pem;

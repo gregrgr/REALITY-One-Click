@@ -9,5 +9,6 @@ configure_firewall() {
   run_cmd ufw allow OpenSSH
   run_cmd ufw allow 80/tcp
   run_cmd ufw allow 443/tcp
+  run_cmd ufw allow "${PANEL_HTTPS_PORT}/tcp"
   run_cmd ufw --force enable
 }

@@ -37,6 +37,7 @@ EOF
 initialize_panel_data() {
   local settings=(
     "panel_domain=${PANEL_DOMAIN}"
+    "panel_https_port=${PANEL_HTTPS_PORT}"
     "node_name=${NODE_NAME}"
     "public_host=${PUBLIC_HOST}"
     "public_port=${XRAY_PUBLIC_PORT}"

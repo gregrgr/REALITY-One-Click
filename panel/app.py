@@ -61,6 +61,10 @@ def redirect_with_message(message: str) -> RedirectResponse:
     return RedirectResponse("/?" + urlencode({"message": message}), status_code=303)
 
 
+def same_host(left: str | None, right: str | None) -> bool:
+    return (left or "").strip().rstrip(".").lower() == (right or "").strip().rstrip(".").lower()
+
+
 def dashboard_context(request: Request, message: str | None = None) -> dict[str, Any]:
     settings = database.get_settings()
     base = runtime.public_base.rstrip("/")
@@ -183,6 +187,10 @@ def update_settings(
         return redirect_with_message("节点名和客户端地址不能为空")
     if not clean_values["public_port"].isdigit():
         return redirect_with_message("客户端端口必须是数字")
+
+    current_settings = database.get_settings()
+    if same_host(clean_values["reality_server_name"], current_settings.get("panel_domain")):
+        return redirect_with_message("REALITY ServerName 不能等于面板域名，请使用 www.microsoft.com 这类伪装 SNI。")
 
     database.set_settings(clean_values)
     ok, output = render_and_restart_xray()

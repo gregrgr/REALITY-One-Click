@@ -12,8 +12,11 @@ The generated Xray configuration is written to `/etc/xray/config.json`.
 | Key | Purpose |
 | --- | --- |
 | `panel_domain` | HTTPS domain for the admin panel and subscriptions. |
+| `panel_https_port` | HTTPS port for the admin panel and subscriptions. Defaults to `8443`. |
 | `public_host` | Hostname clients connect to. Defaults to `panel_domain`. |
 | `public_port` | Public client port. Defaults to `443`. |
+| `xray_listen` | Xray REALITY listen address. Defaults to `0.0.0.0`. |
+| `xray_port` | Xray REALITY listen port. Defaults to `443`. |
 | `xray_api_host` | Local Xray API host for traffic statistics. Defaults to `127.0.0.1`. |
 | `xray_api_port` | Local Xray API port for traffic statistics. Defaults to `10085`. |
 | `reality_dest` | REALITY camouflage destination, for example `www.microsoft.com:443`. |
@@ -59,4 +62,16 @@ After changing settings, run:
 ```bash
 proxy-panel render
 systemctl restart xray
+```
+
+The admin panel URL includes the panel port:
+
+```text
+https://panel.example.com:8443
+```
+
+The proxy entry remains:
+
+```text
+panel.example.com:443
 ```

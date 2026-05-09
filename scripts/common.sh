@@ -146,6 +146,11 @@ reality_server_from_dest() {
 }
 
 collect_install_config() {
+  local migrate_split_arch=0
+  if [[ -r "$ENV_FILE" ]] && ! grep -q '^PANEL_HTTPS_PORT=' "$ENV_FILE"; then
+    migrate_split_arch=1
+  fi
+
   if [[ -r "$ENV_FILE" ]]; then
     # shellcheck disable=SC1090
     source "$ENV_FILE"
@@ -169,9 +174,16 @@ collect_install_config() {
 
   set_default NODE_NAME "vps-reality-01"
   set_default PUBLIC_HOST "$PANEL_DOMAIN"
+  if [[ "$migrate_split_arch" == "1" && "${XRAY_LISTEN:-}" == "127.0.0.1" && "${XRAY_PORT:-}" == "1443" ]]; then
+    XRAY_LISTEN="0.0.0.0"
+    XRAY_PORT="443"
+    XRAY_PUBLIC_PORT="443"
+    export XRAY_LISTEN XRAY_PORT XRAY_PUBLIC_PORT
+  fi
   set_default XRAY_PUBLIC_PORT "443"
-  set_default XRAY_LISTEN "127.0.0.1"
-  set_default XRAY_PORT "1443"
+  set_default XRAY_LISTEN "0.0.0.0"
+  set_default XRAY_PORT "443"
+  set_default PANEL_HTTPS_PORT "8443"
   set_default REALITY_DEST "www.microsoft.com:443"
   set_default REALITY_SERVERNAME "$(reality_server_from_dest "$REALITY_DEST")"
   set_default REALITY_FINGERPRINT "chrome"
@@ -198,9 +210,16 @@ validate_domain() {
 validate_install_config() {
   validate_domain "$PANEL_DOMAIN" || die "Invalid PANEL_DOMAIN: $PANEL_DOMAIN"
   validate_domain "$REALITY_SERVERNAME" || die "Invalid REALITY_SERVERNAME: $REALITY_SERVERNAME"
+  if [[ "${REALITY_SERVERNAME,,}" == "${PANEL_DOMAIN,,}" ]]; then
+    die "REALITY_SERVERNAME must not equal PANEL_DOMAIN. Use a camouflage SNI such as www.microsoft.com, otherwise Nginx SNI routing sends REALITY clients to the panel HTTPS backend."
+  fi
   [[ "$XRAY_PUBLIC_PORT" =~ ^[0-9]+$ ]] || die "Invalid XRAY_PUBLIC_PORT: $XRAY_PUBLIC_PORT"
   [[ "$XRAY_PORT" =~ ^[0-9]+$ ]] || die "Invalid XRAY_PORT: $XRAY_PORT"
+  [[ "$PANEL_HTTPS_PORT" =~ ^[0-9]+$ ]] || die "Invalid PANEL_HTTPS_PORT: $PANEL_HTTPS_PORT"
   [[ "$XRAY_API_PORT" =~ ^[0-9]+$ ]] || die "Invalid XRAY_API_PORT: $XRAY_API_PORT"
+  if [[ "$PANEL_HTTPS_PORT" == "$XRAY_PUBLIC_PORT" || "$PANEL_HTTPS_PORT" == "$XRAY_PORT" ]]; then
+    die "PANEL_HTTPS_PORT must be different from Xray port 443."
+  fi
   [[ "$ACME_CHALLENGE" == "http" || "$ACME_CHALLENGE" == "cloudflare" ]] || die "ACME_CHALLENGE must be http or cloudflare."
   if [[ "$ACME_CHALLENGE" == "cloudflare" && -z "${CLOUDFLARE_API_TOKEN:-}" ]]; then
     die "CLOUDFLARE_API_TOKEN is required when ACME_CHALLENGE=cloudflare."
@@ -215,8 +234,8 @@ install_base_packages() {
   run_cmd apt-get update
   local packages=(
     ca-certificates curl wget unzip jq openssl uuid-runtime \
-    nginx libnginx-mod-stream certbot python3-certbot-nginx \
-    python3 python3-venv python3-pip gettext-base ufw
+    nginx certbot python3-certbot-nginx \
+    python3 python3-venv python3-pip gettext-base sqlite3 ufw
   )
 
   if [[ "${ACME_CHALLENGE:-http}" == "cloudflare" ]]; then
@@ -239,6 +258,7 @@ render_template() {
 
   local vars=(
     PANEL_DOMAIN ACME_WEBROOT XRAY_LISTEN XRAY_PORT XRAY_PUBLIC_PORT
+    PANEL_HTTPS_PORT
     REALITY_DEST REALITY_SERVERNAME REALITY_PRIVATE_KEY REALITY_PUBLIC_KEY
     REALITY_SHORT_ID REALITY_SPIDER_X REALITY_FINGERPRINT
     XRAY_API_HOST XRAY_API_PORT ACME_CHALLENGE CLOUDFLARE_PROPAGATION_SECONDS
@@ -267,8 +287,9 @@ write_env_file() {
 PROXY_PANEL_DB=$DATA_DIR/panel.db
 PROXY_PANEL_CONFIG=/etc/xray/config.json
 PROXY_PANEL_SECRET_KEY=${PROXY_PANEL_SECRET_KEY}
-PROXY_PANEL_PUBLIC_BASE=https://${PANEL_DOMAIN}
+PROXY_PANEL_PUBLIC_BASE=https://${PANEL_DOMAIN}:${PANEL_HTTPS_PORT}
 PANEL_DOMAIN=${PANEL_DOMAIN}
+PANEL_HTTPS_PORT=${PANEL_HTTPS_PORT}
 ACME_EMAIL=${ACME_EMAIL}
 NODE_NAME=${NODE_NAME}
 PUBLIC_HOST=${PUBLIC_HOST}
@@ -307,11 +328,11 @@ print_install_summary() {
 
 Installation complete.
 
-Panel:        https://${PANEL_DOMAIN}
+Panel:        https://${PANEL_DOMAIN}:${PANEL_HTTPS_PORT}
 Admin user:   ${ADMIN_USER}
 Admin pass:   ${ADMIN_PASSWORD}
-Clash sub:    https://${PANEL_DOMAIN}/sub/<user-token>/clash.yaml
-VLESS sub:    https://${PANEL_DOMAIN}/sub/<user-token>/vless.txt
+Clash sub:    https://${PANEL_DOMAIN}:${PANEL_HTTPS_PORT}/sub/<user-token>/clash.yaml
+VLESS sub:    https://${PANEL_DOMAIN}:${PANEL_HTTPS_PORT}/sub/<user-token>/vless.txt
 
 Useful commands:
   proxy-panel status
