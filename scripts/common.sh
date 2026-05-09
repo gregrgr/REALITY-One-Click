@@ -123,6 +123,14 @@ prompt_secret_required() {
   export "$var_name=$current_value"
 }
 
+set_default() {
+  local var_name="$1"
+  local default_value="$2"
+  local current_value="${!var_name:-}"
+
+  export "$var_name=${current_value:-$default_value}"
+}
+
 generate_password() {
   openssl rand -base64 24 | tr -d '\n'
 }
@@ -159,24 +167,24 @@ collect_install_config() {
     export ADMIN_PASSWORD
   fi
 
-  prompt_default NODE_NAME "Node name" "${NODE_NAME:-vps-reality-01}"
-  prompt_default PUBLIC_HOST "Client connection host" "${PUBLIC_HOST:-$PANEL_DOMAIN}"
-  prompt_default XRAY_PUBLIC_PORT "Client connection port" "${XRAY_PUBLIC_PORT:-443}"
-  prompt_default XRAY_LISTEN "Xray local listen address" "${XRAY_LISTEN:-127.0.0.1}"
-  prompt_default XRAY_PORT "Xray local listen port" "${XRAY_PORT:-1443}"
-  prompt_default REALITY_DEST "REALITY dest" "${REALITY_DEST:-www.microsoft.com:443}"
-  prompt_default REALITY_SERVERNAME "REALITY serverName" "${REALITY_SERVERNAME:-$(reality_server_from_dest "$REALITY_DEST")}"
-  prompt_default REALITY_FINGERPRINT "Client fingerprint" "${REALITY_FINGERPRINT:-chrome}"
-  prompt_default XRAY_API_HOST "Xray API listen address for traffic stats" "${XRAY_API_HOST:-127.0.0.1}"
-  prompt_default XRAY_API_PORT "Xray API listen port for traffic stats" "${XRAY_API_PORT:-10085}"
+  set_default NODE_NAME "vps-reality-01"
+  set_default PUBLIC_HOST "$PANEL_DOMAIN"
+  set_default XRAY_PUBLIC_PORT "443"
+  set_default XRAY_LISTEN "127.0.0.1"
+  set_default XRAY_PORT "1443"
+  set_default REALITY_DEST "www.microsoft.com:443"
+  set_default REALITY_SERVERNAME "$(reality_server_from_dest "$REALITY_DEST")"
+  set_default REALITY_FINGERPRINT "chrome"
+  set_default XRAY_API_HOST "127.0.0.1"
+  set_default XRAY_API_PORT "10085"
   prompt_default ACME_CHALLENGE "Certificate challenge method, http or cloudflare" "${ACME_CHALLENGE:-http}"
 
   if [[ "$ACME_CHALLENGE" == "cloudflare" ]]; then
     prompt_secret_required CLOUDFLARE_API_TOKEN "Cloudflare DNS API token"
-    prompt_default CLOUDFLARE_PROPAGATION_SECONDS "Cloudflare DNS propagation seconds" "${CLOUDFLARE_PROPAGATION_SECONDS:-60}"
+    set_default CLOUDFLARE_PROPAGATION_SECONDS "60"
   fi
 
-  prompt_default ENABLE_UFW "Enable UFW firewall, yes or no" "${ENABLE_UFW:-yes}"
+  set_default ENABLE_UFW "yes"
 
   REALITY_SPIDER_X="${REALITY_SPIDER_X:-/}"
   export REALITY_SPIDER_X XRAY_API_HOST XRAY_API_PORT ACME_CHALLENGE CLOUDFLARE_PROPAGATION_SECONDS

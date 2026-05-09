@@ -32,15 +32,15 @@ Environment variables for non-interactive installs:
   ACME_EMAIL         Required. Let's Encrypt account email.
   ADMIN_USER         Default: admin
   ADMIN_PASSWORD     Default: generated strong password
-  NODE_NAME          Default: vps-reality-01
-  PUBLIC_HOST        Default: PANEL_DOMAIN
-  XRAY_PUBLIC_PORT   Default: 443
-  XRAY_LISTEN        Default: 127.0.0.1
-  XRAY_PORT          Default: 1443
-  REALITY_DEST       Default: www.microsoft.com:443
-  REALITY_SERVERNAME Default: REALITY_DEST host
-  XRAY_API_HOST      Default: 127.0.0.1
-  XRAY_API_PORT      Default: 10085
+  NODE_NAME          Optional override. Default: vps-reality-01
+  PUBLIC_HOST        Optional override. Default: PANEL_DOMAIN
+  XRAY_PUBLIC_PORT   Optional override. Default: 443
+  XRAY_LISTEN        Optional override. Default: 127.0.0.1
+  XRAY_PORT          Optional override. Default: 1443
+  REALITY_DEST       Optional override. Default: www.microsoft.com:443
+  REALITY_SERVERNAME Optional override. Default: REALITY_DEST host
+  XRAY_API_HOST      Optional override. Default: 127.0.0.1
+  XRAY_API_PORT      Optional override. Default: 10085
   ACME_CHALLENGE     Default: http. Use cloudflare for DNS API.
   CLOUDFLARE_API_TOKEN
                      Required when ACME_CHALLENGE=cloudflare.

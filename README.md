@@ -36,6 +36,16 @@ ADMIN_PASSWORD='change-this-password' \
 bash install.sh --assume-yes
 ```
 
+交互式安装时，VPS 本机监听地址和端口会直接使用默认值，不再逐项询问：
+
+- `PUBLIC_HOST` 默认等于 `PANEL_DOMAIN`
+- `XRAY_LISTEN=127.0.0.1`
+- `XRAY_PORT=1443`
+- `XRAY_API_HOST=127.0.0.1`
+- `XRAY_API_PORT=10085`
+
+需要自定义时再通过环境变量覆盖即可。
+
 Cloudflare DNS API 证书签发示例：
 
 ```bash
