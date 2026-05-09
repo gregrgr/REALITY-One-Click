@@ -24,6 +24,30 @@ xray_bin() {
   fi
 }
 
+extract_x25519_key() {
+  local key_name="$1"
+  awk -v key_name="$key_name" '
+    {
+      line = $0
+      gsub(/\r/, "", line)
+      normalized = tolower(line)
+      gsub(/[[:space:]_-]/, "", normalized)
+      if (normalized ~ key_name) {
+        value = line
+        if (value ~ /[:：=]/) {
+          sub(/^[^:：=]*[:：=][[:space:]]*/, "", value)
+        } else {
+          sub(/^[^[:space:]]+[[:space:]]+/, "", value)
+        }
+        sub(/^[[:space:]]+/, "", value)
+        sub(/[[:space:]]+$/, "", value)
+        print value
+        exit
+      }
+    }
+  '
+}
+
 ensure_reality_material() {
   if [[ "$DRY_RUN" == "1" ]]; then
     REALITY_PRIVATE_KEY="${REALITY_PRIVATE_KEY:-dry_run_private_key}"
@@ -40,15 +64,18 @@ ensure_reality_material() {
 
   local bin key_output
   bin="$(xray_bin)"
-  key_output="$("$bin" x25519)"
+  if ! key_output="$("$bin" x25519 2>&1)"; then
+    die "Failed to run '$bin x25519'. Output: $key_output"
+  fi
 
-  REALITY_PRIVATE_KEY="${REALITY_PRIVATE_KEY:-$(printf '%s\n' "$key_output" | awk -F': ' '/Private key/ {print $2}')}"
-  REALITY_PUBLIC_KEY="${REALITY_PUBLIC_KEY:-$(printf '%s\n' "$key_output" | awk -F': ' '/Public key/ {print $2}')}"
+  REALITY_PRIVATE_KEY="${REALITY_PRIVATE_KEY:-$(printf '%s\n' "$key_output" | extract_x25519_key "privatekey")}"
+  REALITY_PUBLIC_KEY="${REALITY_PUBLIC_KEY:-$(printf '%s\n' "$key_output" | extract_x25519_key "publickey")}"
   REALITY_SHORT_ID="${REALITY_SHORT_ID:-$(random_hex 8)}"
   PROXY_PANEL_SECRET_KEY="${PROXY_PANEL_SECRET_KEY:-$(random_hex 32)}"
 
-  [[ -n "$REALITY_PRIVATE_KEY" ]] || die "Failed to generate REALITY private key."
-  [[ -n "$REALITY_PUBLIC_KEY" ]] || die "Failed to generate REALITY public key."
+  if [[ -z "$REALITY_PRIVATE_KEY" || -z "$REALITY_PUBLIC_KEY" ]]; then
+    die "Failed to parse REALITY key pair from '$bin x25519'. Output: $key_output"
+  fi
 
   export REALITY_PRIVATE_KEY REALITY_PUBLIC_KEY REALITY_SHORT_ID PROXY_PANEL_SECRET_KEY
 }
