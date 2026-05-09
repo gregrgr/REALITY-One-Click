@@ -8,6 +8,8 @@ from typing import Any
 def build_xray_config(settings: dict[str, str], users: list[Any]) -> dict[str, Any]:
     listen = settings.get("xray_listen", "127.0.0.1")
     port = int(settings.get("xray_port", "1443"))
+    api_host = settings.get("xray_api_host", "127.0.0.1")
+    api_port = int(settings.get("xray_api_port", "10085"))
     reality_dest = settings.get("reality_dest", "www.microsoft.com:443")
     reality_server_name = settings.get("reality_server_name", "www.microsoft.com")
     spider_x = settings.get("reality_spider_x", "/")
@@ -17,6 +19,7 @@ def build_xray_config(settings: dict[str, str], users: list[Any]) -> dict[str, A
             "id": user["uuid"],
             "email": user["name"],
             "flow": "xtls-rprx-vision",
+            "level": 0,
         }
         for user in users
         if int(user["enabled"]) == 1
@@ -53,8 +56,45 @@ def build_xray_config(settings: dict[str, str], users: list[Any]) -> dict[str, A
                     "enabled": True,
                     "destOverride": ["http", "tls", "quic"],
                 },
-            }
+            },
+            {
+                "tag": "api",
+                "listen": api_host,
+                "port": api_port,
+                "protocol": "dokodemo-door",
+                "settings": {
+                    "address": api_host,
+                },
+            },
         ],
+        "api": {
+            "tag": "api",
+            "services": ["StatsService"],
+        },
+        "policy": {
+            "levels": {
+                "0": {
+                    "statsUserUplink": True,
+                    "statsUserDownlink": True,
+                }
+            },
+            "system": {
+                "statsInboundUplink": True,
+                "statsInboundDownlink": True,
+                "statsOutboundUplink": True,
+                "statsOutboundDownlink": True,
+            },
+        },
+        "stats": {},
+        "routing": {
+            "rules": [
+                {
+                    "type": "field",
+                    "inboundTag": ["api"],
+                    "outboundTag": "api",
+                }
+            ]
+        },
         "outbounds": [
             {
                 "tag": "direct",
@@ -76,4 +116,3 @@ def write_xray_config(path: str, settings: dict[str, str], users: list[Any]) -> 
         json.dumps(config, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
-

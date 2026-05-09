@@ -39,6 +39,13 @@ Environment variables for non-interactive installs:
   XRAY_PORT          Default: 1443
   REALITY_DEST       Default: www.microsoft.com:443
   REALITY_SERVERNAME Default: REALITY_DEST host
+  XRAY_API_HOST      Default: 127.0.0.1
+  XRAY_API_PORT      Default: 10085
+  ACME_CHALLENGE     Default: http. Use cloudflare for DNS API.
+  CLOUDFLARE_API_TOKEN
+                     Required when ACME_CHALLENGE=cloudflare.
+  CLOUDFLARE_PROPAGATION_SECONDS
+                     Default: 60
   ENABLE_UFW         Default: yes
 USAGE
 }

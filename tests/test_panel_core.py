@@ -9,6 +9,7 @@ import yaml
 
 from panel.database import Database
 from panel.subscriptions import clash_yaml, vless_uri
+from panel.traffic import human_bytes, parse_stats_output, parse_user_stats
 from panel.xray_config import write_xray_config
 
 
@@ -19,6 +20,8 @@ SETTINGS = {
     "public_port": "443",
     "xray_listen": "127.0.0.1",
     "xray_port": "1443",
+    "xray_api_host": "127.0.0.1",
+    "xray_api_port": "10085",
     "reality_dest": "www.microsoft.com:443",
     "reality_server_name": "www.microsoft.com",
     "reality_private_key": "private-key",
@@ -70,8 +73,25 @@ class PanelCoreTest(unittest.TestCase):
                 inbound["streamSettings"]["realitySettings"]["shortIds"],
                 ["0123456789abcdef"],
             )
+            self.assertIn("stats", data)
+            self.assertEqual(data["api"]["services"], ["StatsService"])
+            self.assertEqual(data["inbounds"][1]["tag"], "api")
+
+    def test_traffic_parser(self) -> None:
+        payload = """
+        {
+          "stat": [
+            {"name": "user>>>alice>>>traffic>>>uplink", "value": 1024},
+            {"name": "user>>>alice>>>traffic>>>downlink", "value": 2048}
+          ]
+        }
+        """
+        stats = parse_stats_output(payload)
+        by_user = parse_user_stats(stats)
+        self.assertEqual(by_user["alice"]["uplink"], 1024)
+        self.assertEqual(by_user["alice"]["downlink"], 2048)
+        self.assertEqual(human_bytes(2048), "2.0 KiB")
 
 
 if __name__ == "__main__":
     unittest.main()
-

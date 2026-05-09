@@ -29,3 +29,26 @@ proxy-panel render
 systemctl restart xray
 ```
 
+## Cloudflare DNS Certificate
+
+Check that the token can edit DNS records for the zone:
+
+```bash
+cat /etc/letsencrypt/cloudflare.ini
+certbot certificates
+journalctl -u certbot -n 100 --no-pager
+```
+
+The token file should contain only `dns_cloudflare_api_token = ...` and should have `0600` permissions.
+
+## Traffic Statistics Are Zero
+
+Traffic counters require the generated Xray API inbound and StatsService:
+
+```bash
+proxy-panel render
+systemctl restart xray
+proxy-panel traffic
+```
+
+Counters reset after Xray restarts.

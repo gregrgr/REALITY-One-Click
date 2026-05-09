@@ -7,6 +7,7 @@ from .database import Database
 from .service import restart_service, systemctl_is_active
 from .settings import get_runtime_settings
 from .subscriptions import vless_uri
+from .traffic import human_bytes, query_user_traffic
 from .xray_config import write_xray_config
 
 
@@ -71,6 +72,8 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("render")
     sub.add_parser("restart")
     sub.add_parser("status")
+    sub.add_parser("traffic")
+    sub.add_parser("reset-traffic")
 
     args = parser.parse_args(argv)
     database = db()
@@ -150,9 +153,24 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{service}: {systemctl_is_active(service)}")
         return 0
 
+    if args.command in {"traffic", "reset-traffic"}:
+        reset = args.command == "reset-traffic"
+        stats = query_user_traffic(database.get_settings(), database.list_users(), reset=reset)
+        if reset:
+            print("traffic counters reset")
+        for name, stat in stats.items():
+            print(
+                "{}\tuplink={}\tdownlink={}\ttotal={}".format(
+                    name,
+                    human_bytes(stat.uplink),
+                    human_bytes(stat.downlink),
+                    human_bytes(stat.total),
+                )
+            )
+        return 0
+
     return 1
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -29,3 +29,22 @@ Example response:
 }
 ```
 
+## Traffic
+
+```text
+GET /api/traffic
+```
+
+Requires an authenticated admin session.
+
+Example response:
+
+```json
+{
+  "alice": {
+    "uplink": 1024,
+    "downlink": 2048,
+    "total": 3072
+  }
+}
+```

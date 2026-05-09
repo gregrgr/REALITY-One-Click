@@ -13,17 +13,46 @@ install_certificate() {
     staging_arg=(--staging)
   fi
 
-  run_cmd certbot certonly \
-    --webroot \
-    -w "$ACME_WEBROOT" \
-    -d "$PANEL_DOMAIN" \
-    --email "$ACME_EMAIL" \
-    --agree-tos \
-    --non-interactive \
-    --keep-until-expiring \
-    "${staging_arg[@]}"
+  if [[ "${ACME_CHALLENGE:-http}" == "cloudflare" ]]; then
+    install_cloudflare_credentials
+    run_cmd certbot certonly \
+      --dns-cloudflare \
+      --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini \
+      --dns-cloudflare-propagation-seconds "${CLOUDFLARE_PROPAGATION_SECONDS:-60}" \
+      -d "$PANEL_DOMAIN" \
+      --email "$ACME_EMAIL" \
+      --agree-tos \
+      --non-interactive \
+      --keep-until-expiring \
+      "${staging_arg[@]}"
+  else
+    run_cmd certbot certonly \
+      --webroot \
+      -w "$ACME_WEBROOT" \
+      -d "$PANEL_DOMAIN" \
+      --email "$ACME_EMAIL" \
+      --agree-tos \
+      --non-interactive \
+      --keep-until-expiring \
+      "${staging_arg[@]}"
+  fi
 
   install_cert_deploy_hook
+}
+
+install_cloudflare_credentials() {
+  [[ -n "${CLOUDFLARE_API_TOKEN:-}" ]] || die "CLOUDFLARE_API_TOKEN is required."
+
+  run_cmd install -d -m 0700 /etc/letsencrypt
+  if [[ "$DRY_RUN" == "1" ]]; then
+    printf '[dry-run] write /etc/letsencrypt/cloudflare.ini\n'
+    return
+  fi
+
+  cat > /etc/letsencrypt/cloudflare.ini <<EOF
+dns_cloudflare_api_token = ${CLOUDFLARE_API_TOKEN}
+EOF
+  chmod 0600 /etc/letsencrypt/cloudflare.ini
 }
 
 install_cert_deploy_hook() {

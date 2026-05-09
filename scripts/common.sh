@@ -100,6 +100,29 @@ prompt_required() {
   export "$var_name=$current_value"
 }
 
+prompt_secret_required() {
+  local var_name="$1"
+  local label="$2"
+  local current_value="${!var_name:-}"
+
+  if [[ -n "$current_value" ]]; then
+    export "$var_name=$current_value"
+    return
+  fi
+
+  if [[ "$ASSUME_YES" == "1" ]]; then
+    die "$var_name is required in --assume-yes mode."
+  fi
+
+  local input
+  while [[ -z "$current_value" ]]; do
+    read -r -s -p "$label: " input
+    printf '\n'
+    current_value="$input"
+  done
+  export "$var_name=$current_value"
+}
+
 generate_password() {
   openssl rand -base64 24 | tr -d '\n'
 }
@@ -144,10 +167,19 @@ collect_install_config() {
   prompt_default REALITY_DEST "REALITY dest" "${REALITY_DEST:-www.microsoft.com:443}"
   prompt_default REALITY_SERVERNAME "REALITY serverName" "${REALITY_SERVERNAME:-$(reality_server_from_dest "$REALITY_DEST")}"
   prompt_default REALITY_FINGERPRINT "Client fingerprint" "${REALITY_FINGERPRINT:-chrome}"
+  prompt_default XRAY_API_HOST "Xray API listen address for traffic stats" "${XRAY_API_HOST:-127.0.0.1}"
+  prompt_default XRAY_API_PORT "Xray API listen port for traffic stats" "${XRAY_API_PORT:-10085}"
+  prompt_default ACME_CHALLENGE "Certificate challenge method, http or cloudflare" "${ACME_CHALLENGE:-http}"
+
+  if [[ "$ACME_CHALLENGE" == "cloudflare" ]]; then
+    prompt_secret_required CLOUDFLARE_API_TOKEN "Cloudflare DNS API token"
+    prompt_default CLOUDFLARE_PROPAGATION_SECONDS "Cloudflare DNS propagation seconds" "${CLOUDFLARE_PROPAGATION_SECONDS:-60}"
+  fi
+
   prompt_default ENABLE_UFW "Enable UFW firewall, yes or no" "${ENABLE_UFW:-yes}"
 
   REALITY_SPIDER_X="${REALITY_SPIDER_X:-/}"
-  export REALITY_SPIDER_X
+  export REALITY_SPIDER_X XRAY_API_HOST XRAY_API_PORT ACME_CHALLENGE CLOUDFLARE_PROPAGATION_SECONDS
 }
 
 validate_domain() {
@@ -160,6 +192,11 @@ validate_install_config() {
   validate_domain "$REALITY_SERVERNAME" || die "Invalid REALITY_SERVERNAME: $REALITY_SERVERNAME"
   [[ "$XRAY_PUBLIC_PORT" =~ ^[0-9]+$ ]] || die "Invalid XRAY_PUBLIC_PORT: $XRAY_PUBLIC_PORT"
   [[ "$XRAY_PORT" =~ ^[0-9]+$ ]] || die "Invalid XRAY_PORT: $XRAY_PORT"
+  [[ "$XRAY_API_PORT" =~ ^[0-9]+$ ]] || die "Invalid XRAY_API_PORT: $XRAY_API_PORT"
+  [[ "$ACME_CHALLENGE" == "http" || "$ACME_CHALLENGE" == "cloudflare" ]] || die "ACME_CHALLENGE must be http or cloudflare."
+  if [[ "$ACME_CHALLENGE" == "cloudflare" && -z "${CLOUDFLARE_API_TOKEN:-}" ]]; then
+    die "CLOUDFLARE_API_TOKEN is required when ACME_CHALLENGE=cloudflare."
+  fi
 
   if command_exists getent; then
     getent ahosts "$PANEL_DOMAIN" >/dev/null || warn "Domain does not resolve from this machine yet: $PANEL_DOMAIN"
@@ -168,10 +205,17 @@ validate_install_config() {
 
 install_base_packages() {
   run_cmd apt-get update
-  run_cmd apt-get install -y \
+  local packages=(
     ca-certificates curl wget unzip jq openssl uuid-runtime \
     nginx libnginx-mod-stream certbot python3-certbot-nginx \
     python3 python3-venv python3-pip gettext-base ufw
+  )
+
+  if [[ "${ACME_CHALLENGE:-http}" == "cloudflare" ]]; then
+    packages+=(python3-certbot-dns-cloudflare)
+  fi
+
+  run_cmd apt-get install -y "${packages[@]}"
 }
 
 escape_sed_replacement() {
@@ -189,6 +233,7 @@ render_template() {
     PANEL_DOMAIN ACME_WEBROOT XRAY_LISTEN XRAY_PORT XRAY_PUBLIC_PORT
     REALITY_DEST REALITY_SERVERNAME REALITY_PRIVATE_KEY REALITY_PUBLIC_KEY
     REALITY_SHORT_ID REALITY_SPIDER_X REALITY_FINGERPRINT
+    XRAY_API_HOST XRAY_API_PORT ACME_CHALLENGE CLOUDFLARE_PROPAGATION_SECONDS
     NODE_NAME PUBLIC_HOST DATA_DIR LOG_DIR OPT_DIR ENV_FILE
   )
 
@@ -229,6 +274,10 @@ REALITY_PUBLIC_KEY=${REALITY_PUBLIC_KEY}
 REALITY_SHORT_ID=${REALITY_SHORT_ID}
 REALITY_SPIDER_X=${REALITY_SPIDER_X}
 REALITY_FINGERPRINT=${REALITY_FINGERPRINT}
+XRAY_API_HOST=${XRAY_API_HOST}
+XRAY_API_PORT=${XRAY_API_PORT}
+ACME_CHALLENGE=${ACME_CHALLENGE}
+CLOUDFLARE_PROPAGATION_SECONDS=${CLOUDFLARE_PROPAGATION_SECONDS:-60}
 EOF
   chmod 0640 "$ENV_FILE"
 }

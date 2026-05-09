@@ -42,6 +42,8 @@ initialize_panel_data() {
     "public_port=${XRAY_PUBLIC_PORT}"
     "xray_listen=${XRAY_LISTEN}"
     "xray_port=${XRAY_PORT}"
+    "xray_api_host=${XRAY_API_HOST}"
+    "xray_api_port=${XRAY_API_PORT}"
     "reality_dest=${REALITY_DEST}"
     "reality_server_name=${REALITY_SERVERNAME}"
     "reality_private_key=${REALITY_PRIVATE_KEY}"

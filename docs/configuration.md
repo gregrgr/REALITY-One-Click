@@ -14,10 +14,45 @@ The generated Xray configuration is written to `/etc/xray/config.json`.
 | `panel_domain` | HTTPS domain for the admin panel and subscriptions. |
 | `public_host` | Hostname clients connect to. Defaults to `panel_domain`. |
 | `public_port` | Public client port. Defaults to `443`. |
+| `xray_api_host` | Local Xray API host for traffic statistics. Defaults to `127.0.0.1`. |
+| `xray_api_port` | Local Xray API port for traffic statistics. Defaults to `10085`. |
 | `reality_dest` | REALITY camouflage destination, for example `www.microsoft.com:443`. |
 | `reality_server_name` | TLS SNI used by clients for REALITY. |
 | `reality_public_key` | Public key used by clients. |
 | `reality_short_id` | REALITY short id used by clients. |
+
+## Certificates
+
+The installer supports two ACME modes:
+
+```bash
+ACME_CHALLENGE=http bash install.sh
+```
+
+or Cloudflare DNS API:
+
+```bash
+ACME_CHALLENGE=cloudflare \
+CLOUDFLARE_API_TOKEN='cf-token-with-zone-dns-edit' \
+bash install.sh
+```
+
+The Cloudflare token is written to `/etc/letsencrypt/cloudflare.ini` with `0600` permissions and is not stored in the panel database.
+
+## Traffic Statistics
+
+Traffic statistics are read from Xray StatsService through the local API inbound. The generated Xray config enables:
+
+- `StatsService`
+- per-user uplink/downlink counters
+- local API inbound on `xray_api_host:xray_api_port`
+
+Counters are held by Xray and reset when Xray restarts or when an admin uses the reset action:
+
+```bash
+proxy-panel traffic
+proxy-panel reset-traffic
+```
 
 After changing settings, run:
 
@@ -25,4 +60,3 @@ After changing settings, run:
 proxy-panel render
 systemctl restart xray
 ```
-

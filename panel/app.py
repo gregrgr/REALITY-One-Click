@@ -13,6 +13,7 @@ from .security import load_session, sign_session, verify_password
 from .service import recent_journal, restart_service, systemctl_is_active
 from .settings import RuntimeSettings, get_runtime_settings
 from .subscriptions import clash_yaml, vless_uri
+from .traffic import human_bytes, query_user_traffic
 from .xray_config import write_xray_config
 
 
@@ -63,19 +64,36 @@ def redirect_with_message(message: str) -> RedirectResponse:
 def dashboard_context(request: Request, message: str | None = None) -> dict[str, Any]:
     settings = database.get_settings()
     base = runtime.public_base.rstrip("/")
+    raw_users = database.list_users()
+    traffic = query_user_traffic(settings, raw_users)
     users = []
-    for row in database.list_users():
+    for row in raw_users:
         user = dict(row)
+        user_traffic = traffic.get(row["name"])
         user["clash_url"] = f"{base}/sub/{row['subscription_token']}/clash.yaml"
         user["vless_sub_url"] = f"{base}/sub/{row['subscription_token']}/vless.txt"
         user["vless_uri"] = vless_uri(settings, row)
+        user["traffic_uplink"] = user_traffic.uplink if user_traffic else 0
+        user["traffic_downlink"] = user_traffic.downlink if user_traffic else 0
+        user["traffic_total"] = user_traffic.total if user_traffic else 0
+        user["traffic_uplink_human"] = human_bytes(user["traffic_uplink"])
+        user["traffic_downlink_human"] = human_bytes(user["traffic_downlink"])
+        user["traffic_total_human"] = human_bytes(user["traffic_total"])
         users.append(user)
+
+    total_uplink = sum(user["traffic_uplink"] for user in users)
+    total_downlink = sum(user["traffic_downlink"] for user in users)
 
     return {
         "request": request,
         "message": message,
         "users": users,
         "settings": settings,
+        "traffic_totals": {
+            "uplink": human_bytes(total_uplink),
+            "downlink": human_bytes(total_downlink),
+            "total": human_bytes(total_uplink + total_downlink),
+        },
         "services": {
             "xray": systemctl_is_active("xray"),
             "nginx": systemctl_is_active("nginx"),
@@ -141,6 +159,35 @@ def dashboard(request: Request) -> Response:
         "dashboard.html",
         dashboard_context(request, request.query_params.get("message")),
     )
+
+
+@app.post("/settings")
+def update_settings(
+    node_name: str = Form(...),
+    public_host: str = Form(...),
+    public_port: str = Form(...),
+    reality_server_name: str = Form(...),
+    reality_dest: str = Form(...),
+    reality_fingerprint: str = Form(...),
+    _: dict[str, Any] = Depends(require_admin),
+) -> RedirectResponse:
+    clean_values = {
+        "node_name": node_name.strip(),
+        "public_host": public_host.strip(),
+        "public_port": public_port.strip(),
+        "reality_server_name": reality_server_name.strip(),
+        "reality_dest": reality_dest.strip(),
+        "reality_fingerprint": reality_fingerprint.strip() or "chrome",
+    }
+    if not clean_values["node_name"] or not clean_values["public_host"]:
+        return redirect_with_message("节点名和客户端地址不能为空")
+    if not clean_values["public_port"].isdigit():
+        return redirect_with_message("客户端端口必须是数字")
+
+    database.set_settings(clean_values)
+    ok, output = render_and_restart_xray()
+    message = "节点设置已保存" if ok else f"设置已保存，但重启 Xray 失败：{output}"
+    return redirect_with_message(message)
 
 
 @app.post("/users")
@@ -210,12 +257,31 @@ def reload_xray(_: dict[str, Any] = Depends(require_admin)) -> RedirectResponse:
     return redirect_with_message(message)
 
 
+@app.post("/traffic/reset")
+def reset_traffic(_: dict[str, Any] = Depends(require_admin)) -> RedirectResponse:
+    query_user_traffic(database.get_settings(), database.list_users(), reset=True)
+    return redirect_with_message("Xray 流量统计已重置")
+
+
 @app.get("/api/status")
 def api_status(_: dict[str, Any] = Depends(require_admin)) -> dict[str, str]:
     return {
         "xray": systemctl_is_active("xray"),
         "nginx": systemctl_is_active("nginx"),
         "proxy-panel": systemctl_is_active("proxy-panel"),
+    }
+
+
+@app.get("/api/traffic")
+def api_traffic(_: dict[str, Any] = Depends(require_admin)) -> dict[str, dict[str, int]]:
+    stats = query_user_traffic(database.get_settings(), database.list_users())
+    return {
+        name: {
+            "uplink": stat.uplink,
+            "downlink": stat.downlink,
+            "total": stat.total,
+        }
+        for name, stat in stats.items()
     }
 
 

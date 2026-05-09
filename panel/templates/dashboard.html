@@ -54,6 +54,12 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
     }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
     .stat {
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -77,12 +83,25 @@
       gap: 10px;
       margin-bottom: 14px;
     }
+    form.settings-form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px 16px;
+    }
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
     input {
       height: 38px;
       border: 1px solid var(--line);
       border-radius: 6px;
       padding: 0 10px;
       font: inherit;
+      width: 100%;
     }
     button, .button {
       height: 34px;
@@ -148,10 +167,17 @@
       flex-wrap: wrap;
       gap: 6px;
     }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
     .settings {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px 16px;
+      margin-top: 14px;
     }
     .settings div {
       border-top: 1px solid var(--line);
@@ -167,6 +193,7 @@
       tr { border-top: 1px solid var(--line); padding: 10px 0; }
       td { border: 0; padding: 6px 0; }
       form.add-user { flex-direction: column; }
+      form.settings-form { grid-template-columns: 1fr; }
       button.primary, input { width: 100%; }
     }
   </style>
@@ -191,22 +218,37 @@
         </div>
         {% endfor %}
       </div>
-      <p>
+      <div class="summary">
+        <div class="stat"><b>总上传</b><span>{{ traffic_totals.uplink }}</span></div>
+        <div class="stat"><b>总下载</b><span>{{ traffic_totals.downlink }}</span></div>
+        <div class="stat"><b>总流量</b><span>{{ traffic_totals.total }}</span></div>
+      </div>
+      <div class="toolbar">
         <form class="inline" method="post" action="/xray/reload">
           <button class="primary" type="submit">重新生成并重启 Xray</button>
         </form>
-      </p>
+        <form class="inline" method="post" action="/traffic/reset">
+          <button type="submit">重置流量统计</button>
+        </form>
+      </div>
     </section>
 
     <section>
-      <h2>节点参数</h2>
+      <h2>节点设置</h2>
+      <form class="settings-form" method="post" action="/settings">
+        <div class="field"><label for="node_name">节点名</label><input id="node_name" name="node_name" value="{{ settings.node_name }}" required></div>
+        <div class="field"><label for="public_host">客户端地址</label><input id="public_host" name="public_host" value="{{ settings.public_host }}" required></div>
+        <div class="field"><label for="public_port">客户端端口</label><input id="public_port" name="public_port" value="{{ settings.public_port }}" inputmode="numeric" required></div>
+        <div class="field"><label for="reality_fingerprint">客户端指纹</label><input id="reality_fingerprint" name="reality_fingerprint" value="{{ settings.reality_fingerprint }}"></div>
+        <div class="field"><label for="reality_server_name">REALITY ServerName</label><input id="reality_server_name" name="reality_server_name" value="{{ settings.reality_server_name }}" required></div>
+        <div class="field"><label for="reality_dest">REALITY Dest</label><input id="reality_dest" name="reality_dest" value="{{ settings.reality_dest }}" required></div>
+        <div class="field"><button class="primary" type="submit">保存并重启 Xray</button></div>
+      </form>
       <div class="settings">
-        <div><b>节点名</b><code>{{ settings.node_name }}</code></div>
-        <div><b>客户端地址</b><code>{{ settings.public_host }}:{{ settings.public_port }}</code></div>
-        <div><b>REALITY ServerName</b><code>{{ settings.reality_server_name }}</code></div>
-        <div><b>REALITY Dest</b><code>{{ settings.reality_dest }}</code></div>
-        <div><b>Public Key</b><code>{{ settings.reality_public_key }}</code></div>
-        <div><b>Short ID</b><code>{{ settings.reality_short_id }}</code></div>
+        <div><b>REALITY Public Key</b><code>{{ settings.reality_public_key }}</code></div>
+        <div><b>REALITY Short ID</b><code>{{ settings.reality_short_id }}</code></div>
+        <div><b>Xray API</b><code>{{ settings.xray_api_host }}:{{ settings.xray_api_port }}</code></div>
+        <div><b>订阅模式</b><code>单 VPS 单节点</code></div>
       </div>
     </section>
 
@@ -221,8 +263,9 @@
           <tr>
             <th style="width: 14%">名称</th>
             <th style="width: 18%">UUID</th>
-            <th style="width: 38%">订阅</th>
-            <th style="width: 30%">操作</th>
+            <th style="width: 16%">流量</th>
+            <th style="width: 32%">订阅</th>
+            <th style="width: 20%">操作</th>
           </tr>
         </thead>
         <tbody>
@@ -233,6 +276,11 @@
               <span class="status {{ 'active' if user.enabled else 'inactive' }}">{{ '启用' if user.enabled else '禁用' }}</span>
             </td>
             <td><code>{{ user.uuid }}</code></td>
+            <td>
+              <b>{{ user.traffic_total_human }}</b><br>
+              <span>↑ {{ user.traffic_uplink_human }}</span><br>
+              <span>↓ {{ user.traffic_downlink_human }}</span>
+            </td>
             <td>
               <div class="links">
                 <a href="{{ user.clash_url }}">Clash</a>
@@ -264,4 +312,3 @@
   </main>
 </body>
 </html>
-
