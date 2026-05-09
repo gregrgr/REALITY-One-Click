@@ -77,6 +77,7 @@ docker run --rm -v "$PWD:/workspace:ro" -w /workspace ubuntu:22.04 \
 - 自动申请并续期 HTTPS 证书，用于管理后端和订阅接口。
 - 支持 HTTP-01 或 Cloudflare DNS API 自动签发 HTTPS 证书。
 - 提供 Clash Meta 订阅地址，客户端可直接导入。
+- Clash Meta 订阅内置本地分流策略，不依赖远程规则集。
 - 提供完整 Web 管理后端，用于查看服务状态、管理用户、修改节点参数、查看流量统计、重启 Xray、复制订阅地址。
 - 当前 VPS 单节点订阅即可，不做多节点聚合。
 - 尽量保持安装脚本幂等，可重复执行、升级、卸载。
@@ -257,7 +258,16 @@ https://panel.example.com/sub/<token>/vless.txt
 - `proxies`
 - `proxy-groups`
 - `rules`
+- 本地分流规则：局域网、私有地址、本地域名、`GEOSITE,cn`、`GEOIP,CN` 走 `DIRECT`。
+- 强制代理规则：Claude、ChatGPT/OpenAI、Figma 相关域名始终走 `Proxy`，并且优先级高于国内直连规则。
+- DNS 防泄漏：启用 `tun.dns-hijack`、`strict-route`、`respect-rules`，强制代理域名使用带 `#Proxy` 的 DoH 解析。
+- 兜底策略：未命中的流量走 `Final`，默认选择 `Proxy`。
+- 内置 DNS：国内 DoH nameserver、海外 fallback、fake-ip 过滤局域网域名。
 - REALITY 必需参数：`servername`、`client-fingerprint`、`reality-opts.public-key`、`reality-opts.short-id`
+
+订阅不使用远程 `rule-providers`，客户端导入后即可本地分流。
+
+DNS 防泄漏依赖客户端支持 Mihomo/Clash Meta 的 TUN 与 DNS 配置。若客户端禁用 TUN、系统私有 DNS、浏览器内置 DoH 或平台限制阻止 DNS 劫持，仍可能出现客户端侧 DNS 泄漏，需要在客户端关闭这些外部 DNS 路径。
 
 ### 订阅安全
 

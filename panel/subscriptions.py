@@ -6,6 +6,75 @@ from urllib.parse import quote, urlencode
 import yaml
 
 
+CLASH_FORCE_PROXY_DOMAIN_SUFFIXES = [
+    "anthropic.com",
+    "anthropic.ai",
+    "claude.ai",
+    "chatgpt.com",
+    "openai.com",
+    "oaistatic.com",
+    "oaiusercontent.com",
+    "openaiapi-site.azureedge.net",
+    "openaicom.imgix.net",
+    "figma.com",
+    "figma.net",
+    "figmausercontent.com",
+    "figstatic.com",
+]
+
+CLASH_DOMESTIC_DNS = [
+    "https://dns.alidns.com/dns-query",
+    "https://doh.pub/dns-query",
+]
+
+CLASH_PROXY_DNS = [
+    "https://1.1.1.1/dns-query#Proxy",
+    "https://8.8.8.8/dns-query#Proxy",
+]
+
+
+CLASH_LOCAL_DIRECT_RULES = [
+    "DOMAIN,localhost,DIRECT",
+    "DOMAIN-SUFFIX,localhost,DIRECT",
+    "DOMAIN-SUFFIX,local,DIRECT",
+    "DOMAIN-SUFFIX,lan,DIRECT",
+    "IP-CIDR,0.0.0.0/8,DIRECT,no-resolve",
+    "IP-CIDR,10.0.0.0/8,DIRECT,no-resolve",
+    "IP-CIDR,100.64.0.0/10,DIRECT,no-resolve",
+    "IP-CIDR,127.0.0.0/8,DIRECT,no-resolve",
+    "IP-CIDR,169.254.0.0/16,DIRECT,no-resolve",
+    "IP-CIDR,172.16.0.0/12,DIRECT,no-resolve",
+    "IP-CIDR,192.0.0.0/24,DIRECT,no-resolve",
+    "IP-CIDR,192.0.2.0/24,DIRECT,no-resolve",
+    "IP-CIDR,192.168.0.0/16,DIRECT,no-resolve",
+    "IP-CIDR,224.0.0.0/4,DIRECT,no-resolve",
+    "IP-CIDR,240.0.0.0/4,DIRECT,no-resolve",
+    "IP-CIDR6,::1/128,DIRECT,no-resolve",
+    "IP-CIDR6,fc00::/7,DIRECT,no-resolve",
+    "IP-CIDR6,fe80::/10,DIRECT,no-resolve",
+    "GEOSITE,private,DIRECT",
+    "GEOSITE,cn,DIRECT",
+    "GEOIP,CN,DIRECT,no-resolve",
+]
+
+
+def build_force_proxy_rules(group_name: str) -> list[str]:
+    return [
+        f"DOMAIN-SUFFIX,{domain},{group_name}"
+        for domain in CLASH_FORCE_PROXY_DOMAIN_SUFFIXES
+    ]
+
+
+def build_dns_policy() -> dict[str, list[str]]:
+    policy = {
+        "geosite:cn": CLASH_DOMESTIC_DNS,
+        "geosite:private": CLASH_DOMESTIC_DNS,
+    }
+    for domain in CLASH_FORCE_PROXY_DOMAIN_SUFFIXES:
+        policy[f"+.{domain}"] = CLASH_PROXY_DNS
+    return policy
+
+
 def build_proxy(settings: dict[str, str], user: Any) -> dict[str, Any]:
     name = settings.get("node_name", "vps-reality-01")
     return {
@@ -30,21 +99,87 @@ def build_proxy(settings: dict[str, str], user: Any) -> dict[str, Any]:
 def clash_yaml(settings: dict[str, str], user: Any) -> str:
     proxy = build_proxy(settings, user)
     group_name = "Proxy"
+    direct_group = "Local"
+    final_group = "Final"
     data = {
         "mixed-port": 7890,
         "allow-lan": False,
         "mode": "rule",
         "log-level": "info",
+        "find-process-mode": "strict",
+        "tun": {
+            "enable": True,
+            "stack": "system",
+            "auto-route": True,
+            "auto-detect-interface": True,
+            "strict-route": True,
+            "dns-hijack": [
+                "any:53",
+                "tcp://any:53",
+            ],
+        },
+        "dns": {
+            "enable": True,
+            "cache-algorithm": "arc",
+            "listen": "0.0.0.0:1053",
+            "ipv6": False,
+            "use-hosts": True,
+            "use-system-hosts": False,
+            "respect-rules": True,
+            "default-nameserver": [
+                "223.5.5.5",
+                "119.29.29.29",
+            ],
+            "enhanced-mode": "fake-ip",
+            "fake-ip-range": "198.18.0.1/16",
+            "fake-ip-filter": [
+                "*.lan",
+                "*.local",
+                "localhost",
+                "router.asus.com",
+                "connect.rom.miui.com",
+                "localhost.ptlogin2.qq.com",
+            ],
+            "nameserver-policy": build_dns_policy(),
+            "proxy-server-nameserver": CLASH_DOMESTIC_DNS,
+            "direct-nameserver": CLASH_DOMESTIC_DNS,
+            "direct-nameserver-follow-policy": True,
+            "nameserver": CLASH_DOMESTIC_DNS,
+            "fallback": CLASH_PROXY_DNS,
+            "fallback-filter": {
+                "geoip": True,
+                "geoip-code": "CN",
+                "geosite": [
+                    "geolocation-!cn",
+                ],
+                "domain": [
+                    f"+.{domain}"
+                    for domain in CLASH_FORCE_PROXY_DOMAIN_SUFFIXES
+                ],
+            },
+        },
         "proxies": [proxy],
         "proxy-groups": [
             {
                 "name": group_name,
                 "type": "select",
                 "proxies": [proxy["name"], "DIRECT"],
-            }
+            },
+            {
+                "name": direct_group,
+                "type": "select",
+                "proxies": ["DIRECT", proxy["name"]],
+            },
+            {
+                "name": final_group,
+                "type": "select",
+                "proxies": [group_name, "DIRECT"],
+            },
         ],
         "rules": [
-            f"MATCH,{group_name}",
+            *build_force_proxy_rules(group_name),
+            *CLASH_LOCAL_DIRECT_RULES,
+            f"MATCH,{final_group}",
         ],
     }
     return yaml.safe_dump(data, allow_unicode=True, sort_keys=False)
