@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Proxy Panel</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fb;
+      --surface: #ffffff;
+      --ink: #172033;
+      --muted: #62728a;
+      --line: #d9e1ec;
+      --accent: #0f766e;
+      --accent-dark: #115e59;
+      --danger: #b42318;
+      --warn: #a15c07;
+      --ok: #157347;
+      --code: #eef3f8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 28px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }
+    h1 { margin: 0; font-size: 22px; letter-spacing: 0; }
+    h2 { margin: 0 0 14px; font-size: 17px; letter-spacing: 0; }
+    main {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 24px auto 48px;
+      display: grid;
+      gap: 18px;
+    }
+    section {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      min-height: 74px;
+    }
+    .stat b { display: block; margin-bottom: 6px; }
+    .status { font-weight: 700; }
+    .status.active { color: var(--ok); }
+    .status.inactive, .status.failed { color: var(--danger); }
+    .message {
+      padding: 10px 12px;
+      border: 1px solid #b7e4d8;
+      background: #ecfdf5;
+      border-radius: 6px;
+      color: #075e54;
+    }
+    form.inline { display: inline; }
+    form.add-user {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    input {
+      height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0 10px;
+      font: inherit;
+    }
+    button, .button {
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0 10px;
+      background: white;
+      color: var(--ink);
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    button.primary {
+      height: 38px;
+      border-color: var(--accent);
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+    }
+    button.primary:hover { background: var(--accent-dark); }
+    button.danger { color: var(--danger); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    th, td {
+      padding: 10px 8px;
+      border-top: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+      font-size: 14px;
+    }
+    th { color: var(--muted); font-weight: 700; }
+    code, pre {
+      background: var(--code);
+      border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+    }
+    code {
+      padding: 2px 5px;
+      word-break: break-all;
+    }
+    pre {
+      margin: 0;
+      padding: 12px;
+      overflow: auto;
+      max-height: 260px;
+      white-space: pre-wrap;
+      color: #304057;
+    }
+    .links {
+      display: grid;
+      gap: 6px;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .settings {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 16px;
+    }
+    .settings div {
+      border-top: 1px solid var(--line);
+      padding-top: 8px;
+      min-width: 0;
+    }
+    .settings b { color: var(--muted); display: block; margin-bottom: 3px; }
+    @media (max-width: 860px) {
+      header { padding: 16px; }
+      .grid, .settings { grid-template-columns: 1fr; }
+      table, thead, tbody, tr, th, td { display: block; }
+      thead { display: none; }
+      tr { border-top: 1px solid var(--line); padding: 10px 0; }
+      td { border: 0; padding: 6px 0; }
+      form.add-user { flex-direction: column; }
+      button.primary, input { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Proxy Panel</h1>
+    <form method="post" action="/logout">
+      <button type="submit">退出</button>
+    </form>
+  </header>
+  <main>
+    {% if message %}<div class="message">{{ message }}</div>{% endif %}
+
+    <section>
+      <h2>服务状态</h2>
+      <div class="grid">
+        {% for name, state in services.items() %}
+        <div class="stat">
+          <b>{{ name }}</b>
+          <span class="status {{ state }}">{{ state }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <p>
+        <form class="inline" method="post" action="/xray/reload">
+          <button class="primary" type="submit">重新生成并重启 Xray</button>
+        </form>
+      </p>
+    </section>
+
+    <section>
+      <h2>节点参数</h2>
+      <div class="settings">
+        <div><b>节点名</b><code>{{ settings.node_name }}</code></div>
+        <div><b>客户端地址</b><code>{{ settings.public_host }}:{{ settings.public_port }}</code></div>
+        <div><b>REALITY ServerName</b><code>{{ settings.reality_server_name }}</code></div>
+        <div><b>REALITY Dest</b><code>{{ settings.reality_dest }}</code></div>
+        <div><b>Public Key</b><code>{{ settings.reality_public_key }}</code></div>
+        <div><b>Short ID</b><code>{{ settings.reality_short_id }}</code></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>用户</h2>
+      <form class="add-user" method="post" action="/users">
+        <input name="name" placeholder="用户名" autocomplete="off" required>
+        <button class="primary" type="submit">新增用户</button>
+      </form>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 14%">名称</th>
+            <th style="width: 18%">UUID</th>
+            <th style="width: 38%">订阅</th>
+            <th style="width: 30%">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr>
+            <td>
+              <b>{{ user.name }}</b><br>
+              <span class="status {{ 'active' if user.enabled else 'inactive' }}">{{ '启用' if user.enabled else '禁用' }}</span>
+            </td>
+            <td><code>{{ user.uuid }}</code></td>
+            <td>
+              <div class="links">
+                <a href="{{ user.clash_url }}">Clash</a>
+                <a href="{{ user.vless_sub_url }}">VLESS</a>
+                <code>{{ user.vless_uri }}</code>
+              </div>
+            </td>
+            <td>
+              <div class="actions">
+                <form class="inline" method="post" action="/users/{{ user.id }}/toggle"><button type="submit">{{ '禁用' if user.enabled else '启用' }}</button></form>
+                <form class="inline" method="post" action="/users/{{ user.id }}/reset-token"><button type="submit">重置订阅</button></form>
+                <form class="inline" method="post" action="/users/{{ user.id }}/reset-uuid"><button type="submit">重置 UUID</button></form>
+                <form class="inline" method="post" action="/users/{{ user.id }}/delete"><button class="danger" type="submit">删除</button></form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>最近日志</h2>
+      <h3>Xray</h3>
+      <pre>{{ logs.xray }}</pre>
+      <h3>Proxy Panel</h3>
+      <pre>{{ logs['proxy-panel'] }}</pre>
+    </section>
+  </main>
+</body>
+</html>
+
