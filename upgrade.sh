@@ -69,6 +69,7 @@ normalize_direct_443_env() {
   LATENCY_PROBE_URL="${LATENCY_PROBE_URL:-https://www.gstatic.com/generate_204}"
   LATENCY_IP_CHECK_URL="${LATENCY_IP_CHECK_URL:-https://api.ipify.org}"
   LATENCY_TIMEOUT_SECONDS="${LATENCY_TIMEOUT_SECONDS:-5}"
+  LATENCY_CACHE_SECONDS="${LATENCY_CACHE_SECONDS:-30}"
   PANEL_HTTPS_PORT="${PANEL_HTTPS_PORT:-8443}"
   XRAY_LISTEN="0.0.0.0"
   XRAY_PORT="443"
@@ -105,7 +106,7 @@ normalize_direct_443_env() {
   export PROXY_PANEL_DB PROXY_PANEL_CONFIG PROXY_PANEL_SECRET_KEY PROXY_PANEL_PUBLIC_BASE
   export NODE_ROLE EGRESS_TAILSCALE_IP EGRESS_BACKEND_PORT EGRESS_BACKEND_LISTEN
   export EGRESS_BACKEND_PROTOCOL TAILSCALE_REQUIRED
-  export LATENCY_PROBE_URL LATENCY_IP_CHECK_URL LATENCY_TIMEOUT_SECONDS
+  export LATENCY_PROBE_URL LATENCY_IP_CHECK_URL LATENCY_TIMEOUT_SECONDS LATENCY_CACHE_SECONDS
   export PANEL_DOMAIN PANEL_HTTPS_PORT PUBLIC_HOST XRAY_LISTEN XRAY_PORT XRAY_PUBLIC_PORT
 
   upsert_env_key "PROXY_PANEL_DB" "$PROXY_PANEL_DB"
@@ -126,6 +127,7 @@ normalize_direct_443_env() {
   upsert_env_key "LATENCY_PROBE_URL" "$LATENCY_PROBE_URL"
   upsert_env_key "LATENCY_IP_CHECK_URL" "$LATENCY_IP_CHECK_URL"
   upsert_env_key "LATENCY_TIMEOUT_SECONDS" "$LATENCY_TIMEOUT_SECONDS"
+  upsert_env_key "LATENCY_CACHE_SECONDS" "$LATENCY_CACHE_SECONDS"
 }
 
 sync_database_runtime_settings() {
@@ -143,6 +145,7 @@ sync_database_runtime_settings() {
     --setting "latency_probe_url=${LATENCY_PROBE_URL:-https://www.gstatic.com/generate_204}"
     --setting "latency_ip_check_url=${LATENCY_IP_CHECK_URL:-https://api.ipify.org}"
     --setting "latency_timeout_seconds=${LATENCY_TIMEOUT_SECONDS:-5}"
+    --setting "latency_cache_seconds=${LATENCY_CACHE_SECONDS:-30}"
   )
 
   if [[ -n "${PANEL_DOMAIN:-}" ]]; then

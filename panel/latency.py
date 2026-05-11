@@ -11,6 +11,12 @@ from urllib.parse import urlparse
 DEFAULT_PROBE_URL = "https://www.gstatic.com/generate_204"
 DEFAULT_IP_CHECK_URL = "https://api.ipify.org"
 DEFAULT_TIMEOUT_SECONDS = 5.0
+DEFAULT_CACHE_SECONDS = 30.0
+_CACHE: dict[str, Any] = {
+    "key": None,
+    "expires_at": 0.0,
+    "value": None,
+}
 
 
 def parse_timeout(settings: dict[str, str]) -> float:
@@ -19,6 +25,26 @@ def parse_timeout(settings: dict[str, str]) -> float:
     except (TypeError, ValueError):
         return DEFAULT_TIMEOUT_SECONDS
     return min(max(timeout, 1.0), 30.0)
+
+
+def parse_cache_seconds(settings: dict[str, str]) -> float:
+    try:
+        ttl = float(settings.get("latency_cache_seconds", DEFAULT_CACHE_SECONDS))
+    except (TypeError, ValueError):
+        return DEFAULT_CACHE_SECONDS
+    return min(max(ttl, 0.0), 300.0)
+
+
+def cache_key(settings: dict[str, str]) -> tuple[str, ...]:
+    return (
+        settings.get("node_role", "single") or "single",
+        settings.get("egress_tailscale_ip", ""),
+        settings.get("egress_backend_port", "10808"),
+        settings.get("egress_backend_protocol", "socks"),
+        settings.get("latency_probe_url", DEFAULT_PROBE_URL),
+        settings.get("latency_ip_check_url", DEFAULT_IP_CHECK_URL),
+        settings.get("latency_timeout_seconds", str(DEFAULT_TIMEOUT_SECONDS)),
+    )
 
 
 def read_exact(sock: socket.socket, size: int) -> bytes:
@@ -223,4 +249,22 @@ def probe_exit_latency(settings: dict[str, str]) -> dict[str, Any]:
         result["ip_error"] = str(exc)
 
     result["status"] = "ok"
+    return result
+
+
+def probe_exit_latency_cached(settings: dict[str, str]) -> dict[str, Any]:
+    ttl = parse_cache_seconds(settings)
+    key = cache_key(settings)
+    now = time.monotonic()
+    if ttl > 0 and _CACHE["key"] == key and _CACHE["value"] is not None and now < _CACHE["expires_at"]:
+        cached = dict(_CACHE["value"])
+        cached["cached"] = True
+        return cached
+
+    result = probe_exit_latency(settings)
+    result["cached"] = False
+    if ttl > 0:
+        _CACHE["key"] = key
+        _CACHE["value"] = dict(result)
+        _CACHE["expires_at"] = now + ttl
     return result

@@ -59,6 +59,7 @@ initialize_panel_data() {
     "latency_probe_url=${LATENCY_PROBE_URL}"
     "latency_ip_check_url=${LATENCY_IP_CHECK_URL}"
     "latency_timeout_seconds=${LATENCY_TIMEOUT_SECONDS}"
+    "latency_cache_seconds=${LATENCY_CACHE_SECONDS}"
   )
 
   if [[ "$DRY_RUN" == "1" ]]; then

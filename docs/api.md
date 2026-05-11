@@ -61,6 +61,8 @@ GET /api/latency
 
 Requires an authenticated admin session. In `single` mode the probe uses the server direct route. In `relay` mode it connects to `EGRESS_TAILSCALE_IP:EGRESS_BACKEND_PORT` as a SOCKS backend and then performs the external HTTP/TLS probe through the egress VPS, so the displayed latency is the relay-to-egress-to-Internet path rather than a local relay ping.
 
+The panel caches this result for `LATENCY_CACHE_SECONDS` seconds, defaulting to `30`, to avoid repeatedly probing through the relay under frequent dashboard refreshes.
+
 Example response:
 
 ```json

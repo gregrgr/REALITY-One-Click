@@ -29,6 +29,7 @@ The generated Xray configuration is written to `/usr/local/etc/xray/config.json`
 | `latency_probe_url` / `LATENCY_PROBE_URL` | URL used by the panel exit latency probe. Defaults to `https://www.gstatic.com/generate_204`. Relay mode probes through the egress SOCKS backend. |
 | `latency_ip_check_url` / `LATENCY_IP_CHECK_URL` | URL used to detect the public exit IP shown in the panel. Defaults to `https://api.ipify.org`. |
 | `latency_timeout_seconds` / `LATENCY_TIMEOUT_SECONDS` | Per-step timeout for panel latency checks. Defaults to `5`, clamped between `1` and `30`. |
+| `latency_cache_seconds` / `LATENCY_CACHE_SECONDS` | Cache TTL for the panel `/api/latency` result. Defaults to `30`, clamped between `0` and `300`. Use `0` to disable caching. |
 | `reality_dest` | REALITY camouflage destination, for example `www.microsoft.com:443`. |
 | `reality_server_name` | TLS SNI used by clients for REALITY. |
 | `reality_public_key` | Public key used by clients. |

@@ -123,6 +123,7 @@ class PanelCoreTest(unittest.TestCase):
             self.assertIn("stats", data)
             self.assertEqual(data["api"]["services"], ["StatsService"])
             self.assertEqual(data["inbounds"][1]["tag"], "api")
+            self.assertNotIn("system", data["policy"])
 
     def test_traffic_parser(self) -> None:
         payload = """

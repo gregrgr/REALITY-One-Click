@@ -108,12 +108,6 @@ def with_stats(config: dict[str, Any]) -> dict[str, Any]:
                         "statsUserDownlink": True,
                     }
                 },
-                "system": {
-                    "statsInboundUplink": True,
-                    "statsInboundDownlink": True,
-                    "statsOutboundUplink": True,
-                    "statsOutboundDownlink": True,
-                },
             },
             "stats": {},
         }
