@@ -215,6 +215,7 @@ collect_install_config() {
   set_default REALITY_FINGERPRINT "chrome"
   set_default XRAY_API_HOST "127.0.0.1"
   set_default XRAY_API_PORT "10085"
+  prompt_default SSH_PORT "SSH port to allow in firewall/security group" "${SSH_PORT:-22}"
   prompt_default ACME_CHALLENGE "Certificate challenge method, http or cloudflare" "${ACME_CHALLENGE:-http}"
 
   if [[ "$ACME_CHALLENGE" == "cloudflare" ]]; then
@@ -243,6 +244,10 @@ validate_install_config() {
   [[ "$XRAY_PORT" =~ ^[0-9]+$ ]] || die "Invalid XRAY_PORT: $XRAY_PORT"
   [[ "$PANEL_HTTPS_PORT" =~ ^[0-9]+$ ]] || die "Invalid PANEL_HTTPS_PORT: $PANEL_HTTPS_PORT"
   [[ "$XRAY_API_PORT" =~ ^[0-9]+$ ]] || die "Invalid XRAY_API_PORT: $XRAY_API_PORT"
+  [[ "$SSH_PORT" =~ ^[0-9]+$ ]] || die "Invalid SSH_PORT: $SSH_PORT"
+  if (( 10#$SSH_PORT < 1 || 10#$SSH_PORT > 65535 )); then
+    die "Invalid SSH_PORT: $SSH_PORT"
+  fi
   if [[ "$PANEL_HTTPS_PORT" == "$XRAY_PUBLIC_PORT" || "$PANEL_HTTPS_PORT" == "$XRAY_PORT" ]]; then
     die "PANEL_HTTPS_PORT must be different from Xray port 443."
   fi
@@ -288,7 +293,7 @@ render_template() {
     REALITY_DEST REALITY_SERVERNAME REALITY_PRIVATE_KEY REALITY_PUBLIC_KEY
     REALITY_SHORT_ID REALITY_SPIDER_X REALITY_FINGERPRINT
     XRAY_API_HOST XRAY_API_PORT ACME_CHALLENGE CLOUDFLARE_PROPAGATION_SECONDS
-    NODE_NAME PUBLIC_HOST DATA_DIR LOG_DIR OPT_DIR ENV_FILE
+    NODE_NAME PUBLIC_HOST SSH_PORT DATA_DIR LOG_DIR OPT_DIR ENV_FILE
   )
 
   local var value escaped
@@ -319,6 +324,7 @@ PANEL_HTTPS_PORT=${PANEL_HTTPS_PORT}
 ACME_EMAIL=${ACME_EMAIL}
 NODE_NAME=${NODE_NAME}
 PUBLIC_HOST=${PUBLIC_HOST}
+SSH_PORT=${SSH_PORT}
 XRAY_PUBLIC_PORT=${XRAY_PUBLIC_PORT}
 XRAY_LISTEN=${XRAY_LISTEN}
 XRAY_PORT=${XRAY_PORT}
@@ -359,6 +365,12 @@ Admin user:   ${ADMIN_USER}
 Admin pass:   ${ADMIN_PASSWORD}
 Clash sub:    https://${PANEL_DOMAIN}:${PANEL_HTTPS_PORT}/sub/<user-token>/clash.yaml
 VLESS sub:    https://${PANEL_DOMAIN}:${PANEL_HTTPS_PORT}/sub/<user-token>/vless.txt
+
+Open these inbound ports in your VPS cloud security group:
+  SSH:             ${SSH_PORT}/tcp
+  HTTP / ACME:     80/tcp
+  Xray REALITY:    ${XRAY_PUBLIC_PORT}/tcp
+  Panel / Sub:     ${PANEL_HTTPS_PORT}/tcp
 
 Useful commands:
   proxy-panel status

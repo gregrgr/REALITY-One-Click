@@ -42,6 +42,7 @@ Environment variables for non-interactive installs:
   REALITY_SERVERNAME Optional override. Default: REALITY_DEST host
   XRAY_API_HOST      Optional override. Default: 127.0.0.1
   XRAY_API_PORT      Optional override. Default: 10085
+  SSH_PORT           SSH port to allow in UFW/security group. Default: 22
   ACME_CHALLENGE     Default: http. Use cloudflare for DNS API.
   CLOUDFLARE_API_TOKEN
                      Required when ACME_CHALLENGE=cloudflare.

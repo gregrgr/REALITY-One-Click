@@ -44,6 +44,7 @@ bash install.sh --assume-yes
 - `PANEL_HTTPS_PORT=8443`
 - `XRAY_API_HOST=127.0.0.1`
 - `XRAY_API_PORT=10085`
+- `SSH_PORT=22`，用于 UFW 和云安全组放行提示，不会修改 sshd 配置。
 
 需要自定义时再通过环境变量覆盖即可，例如 `PUBLIC_HOST=proxy.example.com bash install.sh`。
 
@@ -61,7 +62,7 @@ bash install.sh --assume-yes
 安装前请确保：
 
 - `panel.example.com` 已解析到 VPS。
-- VPS 安全组/防火墙放行 `80/tcp`、`443/tcp` 和后台端口 `8443/tcp`。
+- VPS 安全组/防火墙放行 SSH 端口、`80/tcp`、`443/tcp` 和后台端口 `8443/tcp`。
 - 服务器没有其他服务占用 `80` 或 `443`。
 
 本地开发验证：
@@ -206,6 +207,7 @@ Nginx HTTPS 0.0.0.0:8443 --> Admin API 127.0.0.1:8080
 - 证书签发方式：`http` 或 `cloudflare`。
 - Cloudflare DNS API Token，选择 `cloudflare` 时必填。
 - 节点名称，例如 `vps-reality-01`。
+- SSH 端口，默认 `22`，用于 UFW 和云安全组放行提示。
 - 是否启用 UFW 防火墙。
 
 ### 自动执行步骤

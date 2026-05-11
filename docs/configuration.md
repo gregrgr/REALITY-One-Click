@@ -19,6 +19,7 @@ The generated Xray configuration is written to `/etc/xray/config.json`.
 | `xray_port` | Xray REALITY listen port. Defaults to `443`. |
 | `xray_api_host` | Local Xray API host for traffic statistics. Defaults to `127.0.0.1`. |
 | `xray_api_port` | Local Xray API port for traffic statistics. Defaults to `10085`. |
+| `ssh_port` / `SSH_PORT` | SSH port to allow in UFW and list in cloud security group guidance. Defaults to `22`; it does not modify sshd. |
 | `reality_dest` | REALITY camouflage destination, for example `www.microsoft.com:443`. |
 | `reality_server_name` | TLS SNI used by clients for REALITY. |
 | `reality_public_key` | Public key used by clients. |
