@@ -5,7 +5,7 @@ The installer stores runtime values in two places:
 - `/etc/proxy-panel/panel.env`: service environment and bootstrap values.
 - `/var/lib/proxy-panel/panel.db`: users, subscription tokens, and node settings.
 
-The generated Xray configuration is written to `/etc/xray/config.json`.
+The generated Xray configuration is written to `/usr/local/etc/xray/config.json`, matching the default path used by the official Xray install service.
 
 ## Important Settings
 

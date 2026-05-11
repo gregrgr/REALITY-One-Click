@@ -55,7 +55,10 @@ normalize_direct_443_env() {
   fi
 
   PROXY_PANEL_DB="${PROXY_PANEL_DB:-$DATA_DIR/panel.db}"
-  PROXY_PANEL_CONFIG="${PROXY_PANEL_CONFIG:-/etc/xray/config.json}"
+  PROXY_PANEL_CONFIG="${PROXY_PANEL_CONFIG:-/usr/local/etc/xray/config.json}"
+  if [[ "$PROXY_PANEL_CONFIG" == "/etc/xray/config.json" ]]; then
+    PROXY_PANEL_CONFIG="/usr/local/etc/xray/config.json"
+  fi
   PROXY_PANEL_SECRET_KEY="${PROXY_PANEL_SECRET_KEY:-$(generate_password)}"
   PANEL_HTTPS_PORT="${PANEL_HTTPS_PORT:-8443}"
   XRAY_LISTEN="0.0.0.0"

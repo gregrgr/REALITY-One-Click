@@ -15,8 +15,7 @@ class RuntimeSettings:
 def get_runtime_settings() -> RuntimeSettings:
     return RuntimeSettings(
         db_path=os.getenv("PROXY_PANEL_DB", "/var/lib/proxy-panel/panel.db"),
-        xray_config_path=os.getenv("PROXY_PANEL_CONFIG", "/etc/xray/config.json"),
+        xray_config_path=os.getenv("PROXY_PANEL_CONFIG", "/usr/local/etc/xray/config.json"),
         secret_key=os.getenv("PROXY_PANEL_SECRET_KEY", "change-me-before-production"),
         public_base=os.getenv("PROXY_PANEL_PUBLIC_BASE", "https://localhost"),
     )
-

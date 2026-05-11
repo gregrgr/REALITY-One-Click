@@ -79,6 +79,17 @@ nginx -t && systemctl reload nginx
 systemctl restart xray
 ```
 
+If `xray.service` is running but `443/tcp` is still not listening, check the config path used by systemd. The official Xray installer normally reads `/usr/local/etc/xray/config.json`, and the panel must render to the same file:
+
+```bash
+systemctl status xray --no-pager -l
+grep '^PROXY_PANEL_CONFIG=' /etc/proxy-panel/panel.env
+sed -i 's#^PROXY_PANEL_CONFIG=.*#PROXY_PANEL_CONFIG=/usr/local/etc/xray/config.json#' /etc/proxy-panel/panel.env
+proxy-panel render
+systemctl restart xray
+ss -lntp | grep -E ':(443|10085)\b'
+```
+
 ## Regenerate Config
 
 ```bash
