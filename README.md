@@ -274,10 +274,10 @@ https://panel.example.com:8443/sub/<token>/vless.txt
 - `rules`
 - VLESS REALITY 节点使用 TCP 入站，不声明 UDP 代理能力；客户端里的 `UDP Proxy`/UDP ping 测速超时属于预期现象，请以 TCP/HTTP 延迟测试为准。
 - 本地分流规则：局域网、私有地址、本地域名、`.cn` 与常见国产系统服务域名、`GEOIP,CN` 走 `DIRECT`。
-- 强制代理规则：Claude、ChatGPT/OpenAI、Figma 相关域名始终走 `Proxy`，并且优先级高于国内直连规则。
-- DNS 防泄漏：启用 `tun.dns-hijack`、`strict-route`、`respect-rules`，强制代理域名使用带 `#Proxy` 的 DoH 解析。
+- 强制代理规则：Claude、ChatGPT/OpenAI、Figma 相关域名始终走 `Proxy`，并且优先级高于国内直连规则；`Proxy` 分组不提供 `DIRECT` 选项。
+- DNS 防泄漏：启用 `tun.dns-hijack`、`strict-route`、`respect-rules`，默认 DNS 使用带 `#Proxy` 的 DoH，国内直连域名单独使用国内 DoH 策略。
 - 兜底策略：未命中的流量走 `Final`，默认选择 `Proxy`。
-- 内置 DNS：国内 DoH nameserver、海外 fallback、fake-ip 过滤局域网域名。
+- 内置 DNS：代理 DoH nameserver、国内直连域名 nameserver-policy、海外 fallback、fake-ip 过滤局域网域名。
 - REALITY 必需参数：`servername`、`client-fingerprint`、`reality-opts.public-key`、`reality-opts.short-id`
 
 订阅不使用远程 `rule-providers`，也不使用 `GEOSITE` 规则，避免客户端/Nikki 因下载或解析 `GeoSite.dat` 失败而拒绝配置。客户端导入后即可从订阅服务器获取完整配置。

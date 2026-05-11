@@ -90,6 +90,8 @@ def build_direct_domain_rules() -> list[str]:
 
 def build_dns_policy() -> dict[str, list[str]]:
     policy: dict[str, list[str]] = {}
+    for domain in CLASH_DIRECT_DOMAIN_SUFFIXES:
+        policy[f"+.{domain}"] = CLASH_DOMESTIC_DNS
     for domain in CLASH_FORCE_PROXY_DOMAIN_SUFFIXES:
         policy[f"+.{domain}"] = CLASH_PROXY_DNS
     return policy
@@ -171,7 +173,7 @@ def clash_yaml(settings: dict[str, str], user: Any) -> str:
             "proxy-server-nameserver": CLASH_DOMESTIC_DNS,
             "direct-nameserver": CLASH_DOMESTIC_DNS,
             "direct-nameserver-follow-policy": True,
-            "nameserver": CLASH_DOMESTIC_DNS,
+            "nameserver": CLASH_PROXY_DNS,
             "fallback": CLASH_PROXY_DNS,
             "fallback-filter": {
                 "geoip": True,
@@ -187,7 +189,7 @@ def clash_yaml(settings: dict[str, str], user: Any) -> str:
             {
                 "name": group_name,
                 "type": "select",
-                "proxies": [proxy["name"], "DIRECT"],
+                "proxies": [proxy["name"]],
             },
             {
                 "name": direct_group,
