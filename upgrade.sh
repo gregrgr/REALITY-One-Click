@@ -70,6 +70,9 @@ normalize_direct_443_env() {
   LATENCY_IP_CHECK_URL="${LATENCY_IP_CHECK_URL:-https://api.ipify.org}"
   LATENCY_TIMEOUT_SECONDS="${LATENCY_TIMEOUT_SECONDS:-5}"
   LATENCY_CACHE_SECONDS="${LATENCY_CACHE_SECONDS:-30}"
+  CLASH_RULE_PROVIDERS_ENABLED="${CLASH_RULE_PROVIDERS_ENABLED:-yes}"
+  CLASH_RULE_PROVIDER_BASE_URL="${CLASH_RULE_PROVIDER_BASE_URL:-https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release}"
+  CLASH_RULE_PROVIDER_INTERVAL="${CLASH_RULE_PROVIDER_INTERVAL:-86400}"
   PANEL_HTTPS_PORT="${PANEL_HTTPS_PORT:-8443}"
   XRAY_LISTEN="0.0.0.0"
   XRAY_PORT="443"
@@ -107,6 +110,7 @@ normalize_direct_443_env() {
   export NODE_ROLE EGRESS_TAILSCALE_IP EGRESS_BACKEND_PORT EGRESS_BACKEND_LISTEN
   export EGRESS_BACKEND_PROTOCOL TAILSCALE_REQUIRED
   export LATENCY_PROBE_URL LATENCY_IP_CHECK_URL LATENCY_TIMEOUT_SECONDS LATENCY_CACHE_SECONDS
+  export CLASH_RULE_PROVIDERS_ENABLED CLASH_RULE_PROVIDER_BASE_URL CLASH_RULE_PROVIDER_INTERVAL
   export PANEL_DOMAIN PANEL_HTTPS_PORT PUBLIC_HOST XRAY_LISTEN XRAY_PORT XRAY_PUBLIC_PORT
 
   upsert_env_key "PROXY_PANEL_DB" "$PROXY_PANEL_DB"
@@ -128,6 +132,9 @@ normalize_direct_443_env() {
   upsert_env_key "LATENCY_IP_CHECK_URL" "$LATENCY_IP_CHECK_URL"
   upsert_env_key "LATENCY_TIMEOUT_SECONDS" "$LATENCY_TIMEOUT_SECONDS"
   upsert_env_key "LATENCY_CACHE_SECONDS" "$LATENCY_CACHE_SECONDS"
+  upsert_env_key "CLASH_RULE_PROVIDERS_ENABLED" "$CLASH_RULE_PROVIDERS_ENABLED"
+  upsert_env_key "CLASH_RULE_PROVIDER_BASE_URL" "$CLASH_RULE_PROVIDER_BASE_URL"
+  upsert_env_key "CLASH_RULE_PROVIDER_INTERVAL" "$CLASH_RULE_PROVIDER_INTERVAL"
 }
 
 sync_database_runtime_settings() {
@@ -146,6 +153,9 @@ sync_database_runtime_settings() {
     --setting "latency_ip_check_url=${LATENCY_IP_CHECK_URL:-https://api.ipify.org}"
     --setting "latency_timeout_seconds=${LATENCY_TIMEOUT_SECONDS:-5}"
     --setting "latency_cache_seconds=${LATENCY_CACHE_SECONDS:-30}"
+    --setting "clash_rule_providers_enabled=${CLASH_RULE_PROVIDERS_ENABLED:-yes}"
+    --setting "clash_rule_provider_base_url=${CLASH_RULE_PROVIDER_BASE_URL:-https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release}"
+    --setting "clash_rule_provider_interval=${CLASH_RULE_PROVIDER_INTERVAL:-86400}"
   )
 
   if [[ -n "${PANEL_DOMAIN:-}" ]]; then

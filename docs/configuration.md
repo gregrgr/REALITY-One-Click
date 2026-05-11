@@ -30,6 +30,9 @@ The generated Xray configuration is written to `/usr/local/etc/xray/config.json`
 | `latency_ip_check_url` / `LATENCY_IP_CHECK_URL` | URL used to detect the public exit IP shown in the panel. Defaults to `https://api.ipify.org`. |
 | `latency_timeout_seconds` / `LATENCY_TIMEOUT_SECONDS` | Per-step timeout for panel latency checks. Defaults to `5`, clamped between `1` and `30`. |
 | `latency_cache_seconds` / `LATENCY_CACHE_SECONDS` | Cache TTL for the panel `/api/latency` result. Defaults to `30`, clamped between `0` and `300`. Use `0` to disable caching. |
+| `clash_rule_providers_enabled` / `CLASH_RULE_PROVIDERS_ENABLED` | Include Loyalsoldier Clash `rule-providers` in subscriptions. Defaults to `yes`. Set to `no` to use only embedded rules. |
+| `clash_rule_provider_base_url` / `CLASH_RULE_PROVIDER_BASE_URL` | Base URL for Loyalsoldier rule files. Defaults to `https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release`. |
+| `clash_rule_provider_interval` / `CLASH_RULE_PROVIDER_INTERVAL` | Rule provider refresh interval in seconds. Defaults to `86400`; minimum is `3600`. |
 | `reality_dest` | REALITY camouflage destination, for example `www.microsoft.com:443`. |
 | `reality_server_name` | TLS SNI used by clients for REALITY. |
 | `reality_public_key` | Public key used by clients. |

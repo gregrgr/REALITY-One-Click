@@ -89,7 +89,7 @@ docker run --rm -v "$PWD:/workspace:ro" -w /workspace ubuntu:22.04 \
 - 自动申请并续期 HTTPS 证书，用于管理后端和订阅接口。
 - 支持 HTTP-01 或 Cloudflare DNS API 自动签发 HTTPS 证书。
 - 提供 Clash Meta 订阅地址，客户端可直接导入。
-- Clash Meta 订阅内置本地分流策略，不依赖远程规则集。
+- Clash Meta 订阅内置严谨分流策略，默认使用 Loyalsoldier Clash rule-providers，并保留关键域名前置规则。
 - 提供完整 Web 管理后端，用于查看服务状态、管理用户、修改节点参数、查看流量统计、重启 Xray、复制订阅地址。
 - 当前 VPS 单节点订阅即可，不做多节点聚合。
 - 尽量保持安装脚本幂等，可重复执行、升级、卸载。
@@ -273,7 +273,7 @@ https://panel.example.com:8443/sub/<token>/vless.txt
 - `proxy-groups`
 - `rules`
 - VLESS REALITY 节点使用 TCP 入站，不声明 UDP 代理能力；客户端里的 `UDP Proxy`/UDP ping 测速超时属于预期现象，请以 TCP/HTTP 延迟测试为准。
-- 本地分流规则：局域网、私有地址、本地域名、`.cn`、常见国产系统服务、字节跳动、网易等国内域名走 `DIRECT`。
+- 本地分流规则：局域网、私有地址、本地域名、`.cn`、常见国产系统服务、字节跳动、网易等国内域名，以及 Loyalsoldier `direct`/`cncidr`/`lancidr` 走 `DIRECT`。
 - 强制代理规则：Claude/Anthropic、ChatGPT/OpenAI、Figma 相关域名始终走 `Proxy`，并且优先级高于国内直连规则；`Proxy` 和 `Final` 分组不提供 `DIRECT` 选项。
 - DNS 防泄漏：启用 `tun.dns-hijack`、`strict-route`、`respect-rules`；强制代理域名使用精确域名和 `+.` 通配的 `nameserver-policy`，并通过带 `#Proxy` 的 DoH 解析；国内直连域名单独使用国内 DoH 策略。
 - UDP/WebRTC 防泄漏：订阅首条规则为 `NETWORK,UDP,REJECT`，阻断 STUN/WebRTC/QUIC 等 UDP 直接外连。此配置优先保证不泄漏，UDP 应用可能不可用。
@@ -281,7 +281,7 @@ https://panel.example.com:8443/sub/<token>/vless.txt
 - 内置 DNS：代理 DoH nameserver、强制代理/国内直连域名 nameserver-policy、海外 fallback、fake-ip 过滤局域网域名。
 - REALITY 必需参数：`servername`、`client-fingerprint`、`reality-opts.public-key`、`reality-opts.short-id`
 
-订阅不使用远程 `rule-providers`，也不使用 `GEOSITE` 规则，避免客户端/Nikki 因下载或解析 `GeoSite.dat` 失败而拒绝配置。客户端导入后即可从订阅服务器获取完整配置。
+订阅不使用 `GEOSITE` 规则，避免客户端/Nikki 因下载或解析 `GeoSite.dat` 失败而拒绝配置。默认使用 Loyalsoldier Clash `rule-providers`，规则源为 `CLASH_RULE_PROVIDER_BASE_URL`，默认 `https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release`，刷新间隔 `CLASH_RULE_PROVIDER_INTERVAL=86400`。如需回到纯内置规则，可设置 `CLASH_RULE_PROVIDERS_ENABLED=no` 后运行 `bash upgrade.sh`。
 
 DNS 与 WebRTC 防泄漏依赖客户端支持 Mihomo/Clash Meta 的 TUN、DNS 和规则配置。若客户端禁用 TUN、系统私有 DNS、浏览器内置 DoH、浏览器 WebRTC 策略或平台限制阻止 DNS/UDP 劫持，仍可能出现客户端侧泄漏，需要在客户端关闭这些外部路径。
 

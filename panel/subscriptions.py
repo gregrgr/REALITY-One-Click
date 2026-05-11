@@ -34,6 +34,25 @@ CLASH_PROXY_DNS = [
     "https://8.8.8.8/dns-query#Proxy",
 ]
 
+CLASH_RULE_PROVIDER_FILES = {
+    "reject": ("domain", "reject.txt"),
+    "private": ("domain", "private.txt"),
+    "apple": ("domain", "apple.txt"),
+    "icloud": ("domain", "icloud.txt"),
+    "google": ("domain", "google.txt"),
+    "proxy": ("domain", "proxy.txt"),
+    "direct": ("domain", "direct.txt"),
+    "gfw": ("domain", "gfw.txt"),
+    "tld-not-cn": ("domain", "tld-not-cn.txt"),
+    "telegramcidr": ("ipcidr", "telegramcidr.txt"),
+    "lancidr": ("ipcidr", "lancidr.txt"),
+    "cncidr": ("ipcidr", "cncidr.txt"),
+    "applications": ("classical", "applications.txt"),
+}
+
+DEFAULT_RULE_PROVIDER_BASE_URL = "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release"
+DEFAULT_RULE_PROVIDER_INTERVAL = 86400
+
 CLASH_DIRECT_DOMAIN_SUFFIXES = [
     "cn",
     "allawnfs.com",
@@ -163,6 +182,39 @@ def build_dns_policy() -> dict[str, list[str]]:
     return policy
 
 
+def truthy(value: str | None, default: bool = True) -> bool:
+    if value is None or value == "":
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def rule_provider_base_url(settings: dict[str, str]) -> str:
+    return (settings.get("clash_rule_provider_base_url") or DEFAULT_RULE_PROVIDER_BASE_URL).rstrip("/")
+
+
+def rule_provider_interval(settings: dict[str, str]) -> int:
+    try:
+        interval = int(settings.get("clash_rule_provider_interval", str(DEFAULT_RULE_PROVIDER_INTERVAL)))
+    except ValueError:
+        return DEFAULT_RULE_PROVIDER_INTERVAL
+    return max(interval, 3600)
+
+
+def build_rule_providers(settings: dict[str, str]) -> dict[str, dict[str, Any]]:
+    base_url = rule_provider_base_url(settings)
+    interval = rule_provider_interval(settings)
+    providers: dict[str, dict[str, Any]] = {}
+    for name, (behavior, filename) in CLASH_RULE_PROVIDER_FILES.items():
+        providers[name] = {
+            "type": "http",
+            "behavior": behavior,
+            "url": f"{base_url}/{filename}",
+            "path": f"./ruleset/{name}.yaml",
+            "interval": interval,
+        }
+    return providers
+
+
 def ensure_client_subscription_role(settings: dict[str, str]) -> None:
     if settings.get("node_role", "single") == "egress":
         raise ValueError("egress node does not provide client subscriptions.")
@@ -196,6 +248,23 @@ def clash_yaml(settings: dict[str, str], user: Any) -> str:
     group_name = "Proxy"
     direct_group = "Local"
     final_group = "Final"
+    use_rule_providers = truthy(settings.get("clash_rule_providers_enabled"), default=True)
+    provider_direct_rules = [
+        "RULE-SET,applications,DIRECT",
+        "RULE-SET,private,DIRECT",
+        "RULE-SET,icloud,DIRECT",
+        "RULE-SET,apple,DIRECT",
+        "RULE-SET,direct,DIRECT",
+        "RULE-SET,lancidr,DIRECT",
+        "RULE-SET,cncidr,DIRECT",
+    ] if use_rule_providers else []
+    provider_proxy_rules = [
+        f"RULE-SET,google,{group_name}",
+        f"RULE-SET,proxy,{group_name}",
+        f"RULE-SET,gfw,{group_name}",
+        f"RULE-SET,tld-not-cn,{group_name}",
+        f"RULE-SET,telegramcidr,{group_name}",
+    ] if use_rule_providers else []
     data = {
         "mixed-port": 7890,
         "allow-lan": False,
@@ -272,11 +341,16 @@ def clash_yaml(settings: dict[str, str], user: Any) -> str:
         "rules": [
             *CLASH_UDP_REJECT_RULES,
             *build_force_proxy_rules(group_name),
+            *([f"RULE-SET,reject,REJECT"] if use_rule_providers else []),
+            *provider_direct_rules,
             *build_direct_domain_rules(),
             *CLASH_LOCAL_DIRECT_RULES,
+            *provider_proxy_rules,
             f"MATCH,{final_group}",
         ],
     }
+    if use_rule_providers:
+        data["rule-providers"] = build_rule_providers(settings)
     return yaml.safe_dump(data, allow_unicode=True, sort_keys=False)
 
 

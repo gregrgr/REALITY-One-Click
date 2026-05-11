@@ -60,6 +60,9 @@ initialize_panel_data() {
     "latency_ip_check_url=${LATENCY_IP_CHECK_URL}"
     "latency_timeout_seconds=${LATENCY_TIMEOUT_SECONDS}"
     "latency_cache_seconds=${LATENCY_CACHE_SECONDS}"
+    "clash_rule_providers_enabled=${CLASH_RULE_PROVIDERS_ENABLED}"
+    "clash_rule_provider_base_url=${CLASH_RULE_PROVIDER_BASE_URL}"
+    "clash_rule_provider_interval=${CLASH_RULE_PROVIDER_INTERVAL}"
   )
 
   if [[ "$DRY_RUN" == "1" ]]; then

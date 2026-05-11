@@ -48,7 +48,14 @@ class PanelCoreTest(unittest.TestCase):
             self.assertFalse(proxy["udp"])
             self.assertEqual(proxy["servername"], "www.microsoft.com")
             self.assertEqual(proxy["reality-opts"]["public-key"], "public-key")
-            self.assertNotIn("rule-providers", clash)
+            self.assertIn("rule-providers", clash)
+            self.assertEqual(clash["rule-providers"]["direct"]["behavior"], "domain")
+            self.assertEqual(clash["rule-providers"]["cncidr"]["behavior"], "ipcidr")
+            self.assertEqual(clash["rule-providers"]["applications"]["behavior"], "classical")
+            self.assertEqual(
+                clash["rule-providers"]["direct"]["url"],
+                "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/direct.txt",
+            )
             self.assertIn("DOMAIN-SUFFIX,claude.ai,Proxy", clash["rules"])
             self.assertIn("DOMAIN-SUFFIX,anthropic.com,Proxy", clash["rules"])
             self.assertIn("DOMAIN-SUFFIX,claudeusercontent.com,Proxy", clash["rules"])
@@ -68,14 +75,25 @@ class PanelCoreTest(unittest.TestCase):
             self.assertIn("DOMAIN-SUFFIX,szlcsc.com,DIRECT", clash["rules"])
             self.assertIn("DOMAIN-SUFFIX,msftconnecttest.com,DIRECT", clash["rules"])
             self.assertIn("GEOIP,CN,DIRECT,no-resolve", clash["rules"])
+            self.assertIn("RULE-SET,reject,REJECT", clash["rules"])
+            self.assertIn("RULE-SET,direct,DIRECT", clash["rules"])
+            self.assertIn("RULE-SET,cncidr,DIRECT", clash["rules"])
+            self.assertIn("RULE-SET,proxy,Proxy", clash["rules"])
+            self.assertIn("RULE-SET,gfw,Proxy", clash["rules"])
+            self.assertIn("RULE-SET,tld-not-cn,Proxy", clash["rules"])
+            self.assertIn("RULE-SET,telegramcidr,Proxy", clash["rules"])
             self.assertEqual(clash["rules"][0], "NETWORK,UDP,REJECT")
             self.assertFalse(any(rule.startswith("GEOSITE,") for rule in clash["rules"]))
             self.assertLess(
                 clash["rules"].index("DOMAIN-SUFFIX,chatgpt.com,Proxy"),
-                clash["rules"].index("DOMAIN-SUFFIX,cn,DIRECT"),
+                clash["rules"].index("RULE-SET,direct,DIRECT"),
             )
             self.assertLess(
-                clash["rules"].index("DOMAIN-SUFFIX,cn,DIRECT"),
+                clash["rules"].index("RULE-SET,direct,DIRECT"),
+                clash["rules"].index("RULE-SET,proxy,Proxy"),
+            )
+            self.assertLess(
+                clash["rules"].index("RULE-SET,cncidr,DIRECT"),
                 clash["rules"].index("GEOIP,CN,DIRECT,no-resolve"),
             )
             self.assertEqual(clash["rules"][-1], "MATCH,Final")
@@ -106,6 +124,15 @@ class PanelCoreTest(unittest.TestCase):
             self.assertTrue(uri.startswith(f"vless://{user['uuid']}@panel.example.com:443?"))
             self.assertIn("security=reality", uri)
             self.assertIn("pbk=public-key", uri)
+
+    def test_clash_rule_providers_can_be_disabled(self) -> None:
+        user = {"uuid": "00000000-0000-0000-0000-000000000001", "name": "alice"}
+        clash = yaml.safe_load(clash_yaml({**SETTINGS, "clash_rule_providers_enabled": "no"}, user))
+
+        self.assertNotIn("rule-providers", clash)
+        self.assertFalse(any(rule.startswith("RULE-SET,") for rule in clash["rules"]))
+        self.assertIn("DOMAIN-SUFFIX,anthropic.com,Proxy", clash["rules"])
+        self.assertEqual(clash["rules"][0], "NETWORK,UDP,REJECT")
 
     def test_xray_config_contains_enabled_users_only(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
