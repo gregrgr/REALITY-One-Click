@@ -5,6 +5,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # shellcheck source=scripts/common.sh
 source "$ROOT_DIR/scripts/common.sh"
+# shellcheck source=scripts/install_xray.sh
+source "$ROOT_DIR/scripts/install_xray.sh"
 # shellcheck source=scripts/install_nginx.sh
 source "$ROOT_DIR/scripts/install_nginx.sh"
 
@@ -60,23 +62,35 @@ normalize_direct_443_env() {
     PROXY_PANEL_CONFIG="/usr/local/etc/xray/config.json"
   fi
   PROXY_PANEL_SECRET_KEY="${PROXY_PANEL_SECRET_KEY:-$(generate_password)}"
+  NODE_ROLE="${NODE_ROLE:-single}"
+  EGRESS_BACKEND_PORT="${EGRESS_BACKEND_PORT:-10808}"
+  EGRESS_BACKEND_PROTOCOL="${EGRESS_BACKEND_PROTOCOL:-socks}"
+  TAILSCALE_REQUIRED="${TAILSCALE_REQUIRED:-yes}"
   PANEL_HTTPS_PORT="${PANEL_HTTPS_PORT:-8443}"
   XRAY_LISTEN="0.0.0.0"
   XRAY_PORT="443"
   XRAY_PUBLIC_PORT="443"
+  validate_node_role
+  if [[ "$NODE_ROLE" != "single" ]]; then
+    require_tailscale_ready
+  fi
 
-  local detected_public_host
-  detected_public_host="$(detect_public_ipv4 || true)"
-  if [[ -n "$detected_public_host" ]]; then
-    PUBLIC_HOST="$detected_public_host"
-  elif [[ -z "${PUBLIC_HOST:-}" && -n "${PANEL_DOMAIN:-}" ]]; then
-    PUBLIC_HOST="$PANEL_DOMAIN"
-    warn "Could not detect public IPv4; falling back PUBLIC_HOST to PANEL_DOMAIN."
-  elif [[ -z "${PUBLIC_HOST:-}" ]]; then
-    warn "Could not detect public IPv4 and PANEL_DOMAIN is missing; keeping PUBLIC_HOST unset."
-    PUBLIC_HOST=""
+  if [[ "$NODE_ROLE" == "egress" ]]; then
+    validate_tailscale_bind_ip
   else
-    warn "Could not detect public IPv4; keeping existing PUBLIC_HOST=$PUBLIC_HOST."
+    local detected_public_host
+    detected_public_host="$(detect_public_ipv4 || true)"
+    if [[ -n "$detected_public_host" ]]; then
+      PUBLIC_HOST="$detected_public_host"
+    elif [[ -z "${PUBLIC_HOST:-}" && -n "${PANEL_DOMAIN:-}" ]]; then
+      PUBLIC_HOST="$PANEL_DOMAIN"
+      warn "Could not detect public IPv4; falling back PUBLIC_HOST to PANEL_DOMAIN."
+    elif [[ -z "${PUBLIC_HOST:-}" ]]; then
+      warn "Could not detect public IPv4 and PANEL_DOMAIN is missing; keeping PUBLIC_HOST unset."
+      PUBLIC_HOST=""
+    else
+      warn "Could not detect public IPv4; keeping existing PUBLIC_HOST=$PUBLIC_HOST."
+    fi
   fi
 
   if [[ -n "${PANEL_DOMAIN:-}" ]]; then
@@ -86,27 +100,39 @@ normalize_direct_443_env() {
   fi
 
   export PROXY_PANEL_DB PROXY_PANEL_CONFIG PROXY_PANEL_SECRET_KEY PROXY_PANEL_PUBLIC_BASE
+  export NODE_ROLE EGRESS_TAILSCALE_IP EGRESS_BACKEND_PORT EGRESS_BACKEND_LISTEN
+  export EGRESS_BACKEND_PROTOCOL TAILSCALE_REQUIRED
   export PANEL_DOMAIN PANEL_HTTPS_PORT PUBLIC_HOST XRAY_LISTEN XRAY_PORT XRAY_PUBLIC_PORT
 
   upsert_env_key "PROXY_PANEL_DB" "$PROXY_PANEL_DB"
   upsert_env_key "PROXY_PANEL_CONFIG" "$PROXY_PANEL_CONFIG"
   upsert_env_key "PROXY_PANEL_SECRET_KEY" "$PROXY_PANEL_SECRET_KEY"
   upsert_env_key "PROXY_PANEL_PUBLIC_BASE" "$PROXY_PANEL_PUBLIC_BASE"
+  upsert_env_key "NODE_ROLE" "$NODE_ROLE"
   upsert_env_key "PANEL_HTTPS_PORT" "$PANEL_HTTPS_PORT"
-  upsert_env_key "PUBLIC_HOST" "$PUBLIC_HOST"
+  upsert_env_key "PUBLIC_HOST" "${PUBLIC_HOST:-}"
   upsert_env_key "XRAY_PUBLIC_PORT" "$XRAY_PUBLIC_PORT"
   upsert_env_key "XRAY_LISTEN" "$XRAY_LISTEN"
   upsert_env_key "XRAY_PORT" "$XRAY_PORT"
+  upsert_env_key "EGRESS_TAILSCALE_IP" "${EGRESS_TAILSCALE_IP:-}"
+  upsert_env_key "EGRESS_BACKEND_PORT" "$EGRESS_BACKEND_PORT"
+  upsert_env_key "EGRESS_BACKEND_LISTEN" "${EGRESS_BACKEND_LISTEN:-}"
+  upsert_env_key "EGRESS_BACKEND_PROTOCOL" "$EGRESS_BACKEND_PROTOCOL"
+  upsert_env_key "TAILSCALE_REQUIRED" "$TAILSCALE_REQUIRED"
 }
 
 sync_database_runtime_settings() {
   load_panel_env
 
   local setting_args=(
+    --setting "node_role=${NODE_ROLE:-single}"
     --setting "panel_https_port=${PANEL_HTTPS_PORT:-8443}"
     --setting "public_port=${XRAY_PUBLIC_PORT:-443}"
     --setting "xray_listen=${XRAY_LISTEN:-0.0.0.0}"
     --setting "xray_port=${XRAY_PORT:-443}"
+    --setting "egress_tailscale_ip=${EGRESS_TAILSCALE_IP:-}"
+    --setting "egress_backend_port=${EGRESS_BACKEND_PORT:-10808}"
+    --setting "egress_backend_protocol=${EGRESS_BACKEND_PROTOCOL:-socks}"
   )
 
   if [[ -n "${PANEL_DOMAIN:-}" ]]; then
@@ -142,12 +168,24 @@ if [[ -x /usr/local/bin/xray ]]; then
   bash "$tmp/install-release.sh" install
 fi
 
+normalize_direct_443_env
+
+if [[ "${NODE_ROLE:-single}" == "relay" ]]; then
+  require_relay_can_reach_egress
+fi
+
+if [[ "${NODE_ROLE:-single}" == "egress" ]]; then
+  echo "Rendering egress Xray config..."
+  render_xray_config_from_env
+  systemctl restart xray
+  echo "Egress upgrade complete."
+  exit 0
+fi
+
 echo "Updating panel files..."
 install -d -m 0755 /opt/proxy-panel
 rm -rf /opt/proxy-panel/panel
 cp -a "$ROOT_DIR/panel" /opt/proxy-panel/
-
-normalize_direct_443_env
 
 if [[ ! -x /opt/proxy-panel/.venv/bin/python ]]; then
   python3 -m venv /opt/proxy-panel/.venv

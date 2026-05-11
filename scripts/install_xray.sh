@@ -79,3 +79,47 @@ ensure_reality_material() {
 
   export REALITY_PRIVATE_KEY REALITY_PUBLIC_KEY REALITY_SHORT_ID PROXY_PANEL_SECRET_KEY
 }
+
+render_xray_config_from_env() {
+  if [[ "$DRY_RUN" == "1" ]]; then
+    printf '[dry-run] render xray config from environment\n'
+    return
+  fi
+
+  PYTHONPATH="$ROOT_DIR" python3 - <<'PY'
+import os
+
+from panel.xray_config import write_xray_config
+
+
+ENV_TO_SETTING = {
+    "NODE_ROLE": "node_role",
+    "XRAY_LISTEN": "xray_listen",
+    "XRAY_PORT": "xray_port",
+    "XRAY_API_HOST": "xray_api_host",
+    "XRAY_API_PORT": "xray_api_port",
+    "REALITY_DEST": "reality_dest",
+    "REALITY_SERVERNAME": "reality_server_name",
+    "REALITY_PRIVATE_KEY": "reality_private_key",
+    "REALITY_PUBLIC_KEY": "reality_public_key",
+    "REALITY_SHORT_ID": "reality_short_id",
+    "REALITY_SPIDER_X": "reality_spider_x",
+    "REALITY_FINGERPRINT": "reality_fingerprint",
+    "EGRESS_TAILSCALE_IP": "egress_tailscale_ip",
+    "EGRESS_BACKEND_PORT": "egress_backend_port",
+    "EGRESS_BACKEND_LISTEN": "egress_backend_listen",
+    "EGRESS_BACKEND_PROTOCOL": "egress_backend_protocol",
+}
+
+settings = {
+    setting: value
+    for env_name, setting in ENV_TO_SETTING.items()
+    if (value := os.environ.get(env_name))
+}
+write_xray_config(
+    os.environ.get("PROXY_PANEL_CONFIG", "/usr/local/etc/xray/config.json"),
+    settings,
+    [],
+)
+PY
+}

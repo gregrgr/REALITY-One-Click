@@ -36,6 +36,7 @@ EOF
 
 initialize_panel_data() {
   local settings=(
+    "node_role=${NODE_ROLE}"
     "panel_domain=${PANEL_DOMAIN}"
     "panel_https_port=${PANEL_HTTPS_PORT}"
     "node_name=${NODE_NAME}"
@@ -52,6 +53,9 @@ initialize_panel_data() {
     "reality_short_id=${REALITY_SHORT_ID}"
     "reality_spider_x=${REALITY_SPIDER_X}"
     "reality_fingerprint=${REALITY_FINGERPRINT}"
+    "egress_tailscale_ip=${EGRESS_TAILSCALE_IP:-}"
+    "egress_backend_port=${EGRESS_BACKEND_PORT}"
+    "egress_backend_protocol=${EGRESS_BACKEND_PROTOCOL}"
   )
 
   if [[ "$DRY_RUN" == "1" ]]; then

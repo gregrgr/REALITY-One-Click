@@ -298,8 +298,12 @@ def clash_subscription(token: str) -> PlainTextResponse:
     user = database.get_user_by_token(token)
     if not user:
         raise HTTPException(status_code=404)
+    try:
+        body = clash_yaml(database.get_settings(), user)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return PlainTextResponse(
-        clash_yaml(database.get_settings(), user),
+        body,
         media_type="application/x-yaml; charset=utf-8",
     )
 
@@ -309,7 +313,11 @@ def vless_subscription(token: str) -> PlainTextResponse:
     user = database.get_user_by_token(token)
     if not user:
         raise HTTPException(status_code=404)
+    try:
+        body = vless_uri(database.get_settings(), user) + "\n"
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return PlainTextResponse(
-        vless_uri(database.get_settings(), user) + "\n",
+        body,
         media_type="text/plain; charset=utf-8",
     )

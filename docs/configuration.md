@@ -11,6 +11,7 @@ The generated Xray configuration is written to `/usr/local/etc/xray/config.json`
 
 | Key | Purpose |
 | --- | --- |
+| `node_role` / `NODE_ROLE` | Node role: `single`, `relay`, or `egress`. Defaults to `single`. |
 | `panel_domain` | HTTPS domain for the admin panel and subscriptions. |
 | `panel_https_port` | HTTPS port for the admin panel and subscriptions. Defaults to `8443`. |
 | `public_host` | Host or IP clients connect to. Defaults to the auto-detected public IPv4, falling back to `panel_domain`. |
@@ -20,6 +21,11 @@ The generated Xray configuration is written to `/usr/local/etc/xray/config.json`
 | `xray_api_host` | Local Xray API host for traffic statistics. Defaults to `127.0.0.1`. |
 | `xray_api_port` | Local Xray API port for traffic statistics. Defaults to `10085`. |
 | `ssh_port` / `SSH_PORT` | SSH port to allow in UFW and list in cloud security group guidance. Defaults to `22`; it does not modify sshd. |
+| `egress_tailscale_ip` / `EGRESS_TAILSCALE_IP` | Relay mode target egress Tailscale IPv4, for example `100.x.x.x`. Required for `NODE_ROLE=relay`. |
+| `egress_backend_port` / `EGRESS_BACKEND_PORT` | Egress backend SOCKS port. Defaults to `10808`. |
+| `egress_backend_listen` / `EGRESS_BACKEND_LISTEN` | Egress mode bind address. Defaults to the detected `tailscale0` `100.x.x.x` address. Must not be `0.0.0.0`. |
+| `egress_backend_protocol` / `EGRESS_BACKEND_PROTOCOL` | Backend protocol between relay and egress. Defaults to `socks`; only `socks` is currently supported. |
+| `tailscale_required` / `TAILSCALE_REQUIRED` | Require `tailscale status` to work for relay/egress. Defaults to `yes`. |
 | `reality_dest` | REALITY camouflage destination, for example `www.microsoft.com:443`. |
 | `reality_server_name` | TLS SNI used by clients for REALITY. |
 | `reality_public_key` | Public key used by clients. |

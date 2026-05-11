@@ -59,7 +59,6 @@ CLASH_LOCAL_DIRECT_RULES = [
     "DOMAIN-SUFFIX,lan,DIRECT",
     "IP-CIDR,0.0.0.0/8,DIRECT,no-resolve",
     "IP-CIDR,10.0.0.0/8,DIRECT,no-resolve",
-    "IP-CIDR,100.64.0.0/10,DIRECT,no-resolve",
     "IP-CIDR,127.0.0.0/8,DIRECT,no-resolve",
     "IP-CIDR,169.254.0.0/16,DIRECT,no-resolve",
     "IP-CIDR,172.16.0.0/12,DIRECT,no-resolve",
@@ -96,7 +95,13 @@ def build_dns_policy() -> dict[str, list[str]]:
     return policy
 
 
+def ensure_client_subscription_role(settings: dict[str, str]) -> None:
+    if settings.get("node_role", "single") == "egress":
+        raise ValueError("egress node does not provide client subscriptions.")
+
+
 def build_proxy(settings: dict[str, str], user: Any) -> dict[str, Any]:
+    ensure_client_subscription_role(settings)
     name = settings.get("node_name", "vps-reality-01")
     return {
         "name": name,
@@ -118,6 +123,7 @@ def build_proxy(settings: dict[str, str], user: Any) -> dict[str, Any]:
 
 
 def clash_yaml(settings: dict[str, str], user: Any) -> str:
+    ensure_client_subscription_role(settings)
     proxy = build_proxy(settings, user)
     group_name = "Proxy"
     direct_group = "Local"
@@ -205,6 +211,7 @@ def clash_yaml(settings: dict[str, str], user: Any) -> str:
 
 
 def vless_uri(settings: dict[str, str], user: Any) -> str:
+    ensure_client_subscription_role(settings)
     host = settings.get("public_host", settings.get("panel_domain", "localhost"))
     port = settings.get("public_port", "443")
     params = {

@@ -28,6 +28,7 @@ Options:
   -h, --help         Show this help.
 
 Environment variables for non-interactive installs:
+  NODE_ROLE          single, relay, or egress. Default: single
   PANEL_DOMAIN       Required. HTTPS panel and subscription domain.
   ACME_EMAIL         Required. Let's Encrypt account email.
   ADMIN_USER         Default: admin
@@ -43,6 +44,15 @@ Environment variables for non-interactive installs:
   XRAY_API_HOST      Optional override. Default: 127.0.0.1
   XRAY_API_PORT      Optional override. Default: 10085
   SSH_PORT           SSH port to allow in UFW/security group. Default: 22
+  EGRESS_TAILSCALE_IP
+                     Required when NODE_ROLE=relay.
+  EGRESS_BACKEND_PORT
+                     Egress backend port. Default: 10808
+  EGRESS_BACKEND_LISTEN
+                     Egress Tailscale listen IP. Auto-detected on egress.
+  EGRESS_BACKEND_PROTOCOL
+                     Default: socks
+  TAILSCALE_REQUIRED Default: yes for relay/egress checks.
   ACME_CHALLENGE     Default: http. Use cloudflare for DNS API.
   CLOUDFLARE_API_TOKEN
                      Required when ACME_CHALLENGE=cloudflare.
@@ -81,13 +91,36 @@ main() {
   require_root
   require_ubuntu_2204
   collect_install_config
-  validate_install_config
 
   log "Installing base packages"
   install_base_packages
 
+  if [[ "$NODE_ROLE" != "single" ]]; then
+    require_tailscale_ready
+  fi
+  validate_install_config
+  if [[ "$NODE_ROLE" == "relay" ]]; then
+    require_relay_can_reach_egress
+  fi
+
   log "Installing Xray Core"
   install_xray_core
+
+  if [[ "$NODE_ROLE" == "egress" ]]; then
+    log "Rendering egress Xray backend config"
+    write_env_file
+    render_xray_config_from_env
+    systemctl_if_available enable xray
+    systemctl_if_available restart xray
+
+    if [[ "${SKIP_FIREWALL:-0}" != "1" && "${ENABLE_UFW:-yes}" == "yes" ]]; then
+      configure_firewall
+    fi
+
+    print_egress_summary
+    return
+  fi
+
   ensure_reality_material
 
   log "Preparing Nginx HTTP site"
