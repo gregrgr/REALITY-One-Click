@@ -41,9 +41,11 @@ Run on the egress VPS:
 ```bash
 NODE_ROLE=egress \
 EGRESS_BACKEND_PORT=10808 \
-SSH_PORT=22 \
+SSH_PORT=<egress-ssh-port> \
 bash install.sh --assume-yes
 ```
+
+Set `SSH_PORT` to the current SSH port of the egress VPS. It is only used for UFW and cloud security group guidance; the installer does not modify sshd.
 
 `EGRESS_BACKEND_LISTEN` is optional. When empty, the installer detects the `tailscale0` IPv4 address. It must be a `100.x.x.x` address and must not be `0.0.0.0`.
 
@@ -139,7 +141,11 @@ systemctl restart xray
 For egress-only installs without panel CLI, rerun:
 
 ```bash
-NODE_ROLE=egress EGRESS_BACKEND_LISTEN="${EGRESS_BACKEND_LISTEN}" bash install.sh --assume-yes
+NODE_ROLE=egress \
+EGRESS_BACKEND_LISTEN="${EGRESS_BACKEND_LISTEN}" \
+EGRESS_BACKEND_PORT=10808 \
+SSH_PORT=<egress-ssh-port> \
+bash install.sh --assume-yes
 ```
 
 ### Client Connects but Exit IP Is Still Relay
@@ -173,12 +179,12 @@ Open/allow UDP for direct Tailscale peer paths according to Tailscale guidance, 
 Use your VPS provider console and allow your SSH port:
 
 ```bash
-ufw allow 22/tcp
+ufw allow <ssh-port>/tcp
 ufw reload
 ufw status numbered
 ```
 
-Replace `22` with your configured `SSH_PORT`.
+Use the current SSH port configured on that VPS.
 
 ### Subscription Leaks 100.x.x.x
 

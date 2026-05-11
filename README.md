@@ -44,7 +44,7 @@ bash install.sh --assume-yes
 - `PANEL_HTTPS_PORT=8443`
 - `XRAY_API_HOST=127.0.0.1`
 - `XRAY_API_PORT=10085`
-- `SSH_PORT=22`，用于 UFW 和云安全组放行提示，不会修改 sshd 配置。
+- `SSH_PORT=22`，用于 UFW 和云安全组放行提示，不会修改 sshd 配置；如果 VPS 已改 SSH 端口，请设置为当前实际端口。
 
 需要自定义时再通过环境变量覆盖即可，例如 `PUBLIC_HOST=203.0.113.10 bash install.sh`。
 
