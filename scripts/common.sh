@@ -197,11 +197,7 @@ collect_install_config() {
 
   set_default NODE_NAME "vps-reality-01"
   if [[ -z "${PUBLIC_HOST:-}" ]]; then
-    PUBLIC_HOST="$(detect_public_ipv4 || true)"
-    if [[ -z "$PUBLIC_HOST" ]]; then
-      warn "Could not detect public IPv4; falling back PUBLIC_HOST to PANEL_DOMAIN."
-      PUBLIC_HOST="$PANEL_DOMAIN"
-    fi
+    PUBLIC_HOST="$PANEL_DOMAIN"
     export PUBLIC_HOST
   fi
   if [[ "$migrate_split_arch" == "1" && "${XRAY_LISTEN:-}" == "127.0.0.1" && "${XRAY_PORT:-}" == "1443" ]]; then

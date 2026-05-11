@@ -57,6 +57,9 @@ def main(argv: list[str] | None = None) -> int:
     init_parser.add_argument("--admin-password", required=True)
     init_parser.add_argument("--setting", action="append", default=[])
 
+    settings_parser = sub.add_parser("set-settings")
+    settings_parser.add_argument("--setting", action="append", default=[], required=True)
+
     ensure_user = sub.add_parser("ensure-user")
     ensure_user.add_argument("name")
 
@@ -82,6 +85,11 @@ def main(argv: list[str] | None = None) -> int:
         database.upsert_admin(args.admin_user, args.admin_password)
         database.set_settings(parse_setting_args(args.setting))
         print("initialized")
+        return 0
+
+    if args.command == "set-settings":
+        database.set_settings(parse_setting_args(args.setting))
+        print("settings updated")
         return 0
 
     if args.command == "ensure-user":

@@ -3,10 +3,126 @@ set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
-  echo "Please run as root." >&2
-  exit 1
-fi
+# shellcheck source=scripts/common.sh
+source "$ROOT_DIR/scripts/common.sh"
+# shellcheck source=scripts/install_nginx.sh
+source "$ROOT_DIR/scripts/install_nginx.sh"
+
+load_panel_env() {
+  if [[ -r "$ENV_FILE" ]]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+    set +a
+  fi
+}
+
+upsert_env_key() {
+  local key="$1"
+  local value="$2"
+  local tmp
+  tmp="$(mktemp)"
+
+  if [[ -r "$ENV_FILE" ]]; then
+    awk -v key="$key" -v value="$value" '
+      BEGIN { written = 0 }
+      $0 ~ "^" key "=" {
+        print key "=" value
+        written = 1
+        next
+      }
+      { print }
+      END {
+        if (!written) {
+          print key "=" value
+        }
+      }
+    ' "$ENV_FILE" > "$tmp"
+  else
+    printf '%s=%s\n' "$key" "$value" > "$tmp"
+  fi
+
+  install -D -m 0640 "$tmp" "$ENV_FILE"
+  rm -f "$tmp"
+}
+
+normalize_direct_443_env() {
+  install -d -m 0750 "$ETC_DIR"
+  load_panel_env
+
+  if [[ -z "${PANEL_DOMAIN:-}" ]]; then
+    warn "PANEL_DOMAIN is missing in $ENV_FILE; skipping Nginx env migration."
+  fi
+
+  PROXY_PANEL_DB="${PROXY_PANEL_DB:-$DATA_DIR/panel.db}"
+  PROXY_PANEL_CONFIG="${PROXY_PANEL_CONFIG:-/etc/xray/config.json}"
+  PROXY_PANEL_SECRET_KEY="${PROXY_PANEL_SECRET_KEY:-$(generate_password)}"
+  PANEL_HTTPS_PORT="${PANEL_HTTPS_PORT:-8443}"
+  XRAY_LISTEN="0.0.0.0"
+  XRAY_PORT="443"
+  XRAY_PUBLIC_PORT="443"
+
+  if [[ -n "${PANEL_DOMAIN:-}" ]]; then
+    PUBLIC_HOST="$PANEL_DOMAIN"
+  elif [[ -z "${PUBLIC_HOST:-}" ]]; then
+    warn "PANEL_DOMAIN is missing; keeping PUBLIC_HOST unset."
+    PUBLIC_HOST=""
+  fi
+
+  if [[ -n "${PANEL_DOMAIN:-}" ]]; then
+    PROXY_PANEL_PUBLIC_BASE="https://${PANEL_DOMAIN}:${PANEL_HTTPS_PORT}"
+  else
+    PROXY_PANEL_PUBLIC_BASE="${PROXY_PANEL_PUBLIC_BASE:-https://localhost:${PANEL_HTTPS_PORT}}"
+  fi
+
+  export PROXY_PANEL_DB PROXY_PANEL_CONFIG PROXY_PANEL_SECRET_KEY PROXY_PANEL_PUBLIC_BASE
+  export PANEL_DOMAIN PANEL_HTTPS_PORT PUBLIC_HOST XRAY_LISTEN XRAY_PORT XRAY_PUBLIC_PORT
+
+  upsert_env_key "PROXY_PANEL_DB" "$PROXY_PANEL_DB"
+  upsert_env_key "PROXY_PANEL_CONFIG" "$PROXY_PANEL_CONFIG"
+  upsert_env_key "PROXY_PANEL_SECRET_KEY" "$PROXY_PANEL_SECRET_KEY"
+  upsert_env_key "PROXY_PANEL_PUBLIC_BASE" "$PROXY_PANEL_PUBLIC_BASE"
+  upsert_env_key "PANEL_HTTPS_PORT" "$PANEL_HTTPS_PORT"
+  upsert_env_key "PUBLIC_HOST" "$PUBLIC_HOST"
+  upsert_env_key "XRAY_PUBLIC_PORT" "$XRAY_PUBLIC_PORT"
+  upsert_env_key "XRAY_LISTEN" "$XRAY_LISTEN"
+  upsert_env_key "XRAY_PORT" "$XRAY_PORT"
+}
+
+sync_database_runtime_settings() {
+  load_panel_env
+
+  local setting_args=(
+    --setting "panel_https_port=${PANEL_HTTPS_PORT:-8443}"
+    --setting "public_port=${XRAY_PUBLIC_PORT:-443}"
+    --setting "xray_listen=${XRAY_LISTEN:-0.0.0.0}"
+    --setting "xray_port=${XRAY_PORT:-443}"
+  )
+
+  if [[ -n "${PANEL_DOMAIN:-}" ]]; then
+    setting_args+=(--setting "panel_domain=$PANEL_DOMAIN")
+  fi
+  if [[ -n "${PUBLIC_HOST:-}" ]]; then
+    setting_args+=(--setting "public_host=$PUBLIC_HOST")
+  fi
+
+  "$OPT_DIR/.venv/bin/python" -m panel.cli set-settings "${setting_args[@]}"
+}
+
+render_upgrade_nginx_config() {
+  load_panel_env
+  if [[ -z "${PANEL_DOMAIN:-}" ]]; then
+    warn "PANEL_DOMAIN is missing; skipped Nginx render."
+    return
+  fi
+
+  install_nginx_base
+  render_nginx_tls_config
+  disable_nginx_stream_config
+  reload_or_start_nginx
+}
+
+require_root
 
 if [[ -x /usr/local/bin/xray ]]; then
   echo "Upgrading Xray Core..."
@@ -21,8 +137,19 @@ install -d -m 0755 /opt/proxy-panel
 rm -rf /opt/proxy-panel/panel
 cp -a "$ROOT_DIR/panel" /opt/proxy-panel/
 
+normalize_direct_443_env
+
+if [[ ! -x /opt/proxy-panel/.venv/bin/python ]]; then
+  python3 -m venv /opt/proxy-panel/.venv
+fi
+
 /opt/proxy-panel/.venv/bin/pip install --upgrade -r /opt/proxy-panel/panel/requirements.txt
+sync_database_runtime_settings
 /opt/proxy-panel/.venv/bin/python -m panel.cli render
+
+render_template "$ROOT_DIR/templates/proxy-panel.service.tpl" /etc/systemd/system/proxy-panel.service
+systemctl daemon-reload
+render_upgrade_nginx_config
 
 systemctl restart proxy-panel xray
 echo "Upgrade complete."
