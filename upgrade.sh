@@ -62,11 +62,18 @@ normalize_direct_443_env() {
   XRAY_PORT="443"
   XRAY_PUBLIC_PORT="443"
 
-  if [[ -n "${PANEL_DOMAIN:-}" ]]; then
+  local detected_public_host
+  detected_public_host="$(detect_public_ipv4 || true)"
+  if [[ -n "$detected_public_host" ]]; then
+    PUBLIC_HOST="$detected_public_host"
+  elif [[ -z "${PUBLIC_HOST:-}" && -n "${PANEL_DOMAIN:-}" ]]; then
     PUBLIC_HOST="$PANEL_DOMAIN"
+    warn "Could not detect public IPv4; falling back PUBLIC_HOST to PANEL_DOMAIN."
   elif [[ -z "${PUBLIC_HOST:-}" ]]; then
-    warn "PANEL_DOMAIN is missing; keeping PUBLIC_HOST unset."
+    warn "Could not detect public IPv4 and PANEL_DOMAIN is missing; keeping PUBLIC_HOST unset."
     PUBLIC_HOST=""
+  else
+    warn "Could not detect public IPv4; keeping existing PUBLIC_HOST=$PUBLIC_HOST."
   fi
 
   if [[ -n "${PANEL_DOMAIN:-}" ]]; then
