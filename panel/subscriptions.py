@@ -10,6 +10,8 @@ CLASH_FORCE_PROXY_DOMAIN_SUFFIXES = [
     "anthropic.com",
     "anthropic.ai",
     "claude.ai",
+    "claude.com",
+    "claudeusercontent.com",
     "chatgpt.com",
     "openai.com",
     "oaistatic.com",
@@ -49,6 +51,55 @@ CLASH_DIRECT_DOMAIN_SUFFIXES = [
     "vivo.com",
     "vivo.com.cn",
     "xiaomi.com",
+    "amemv.com",
+    "byteacctimg.com",
+    "bytecdn.cn",
+    "bytegoofy.com",
+    "byteimg.com",
+    "bytescm.com",
+    "bytedance.com",
+    "doubao.com",
+    "douyin.com",
+    "douyincdn.com",
+    "douyinpic.com",
+    "douyinstatic.com",
+    "douyinvod.com",
+    "feishu.cn",
+    "feishu.net",
+    "ibytedtos.com",
+    "ibyteimg.com",
+    "ixigua.com",
+    "pstatp.com",
+    "snssdk.com",
+    "toutiao.com",
+    "toutiaocloud.com",
+    "toutiaostatic.com",
+    "toutiaovod.com",
+    "volcengine.com",
+    "volces.com",
+    "zijieapi.com",
+    "zijiecdn.com",
+    "zijieimg.com",
+    "126.com",
+    "126.net",
+    "127.net",
+    "163.com",
+    "163img.com",
+    "163jiasu.com",
+    "163yun.com",
+    "icourse163.org",
+    "netease.com",
+    "netease.im",
+    "neteasegame.com",
+    "ntes53.com",
+    "yeah.net",
+    "ydstatic.com",
+    "youdao.com",
+]
+
+
+CLASH_UDP_REJECT_RULES = [
+    "NETWORK,UDP,REJECT",
 ]
 
 
@@ -91,8 +142,10 @@ def build_direct_domain_rules() -> list[str]:
 def build_dns_policy() -> dict[str, list[str]]:
     policy: dict[str, list[str]] = {}
     for domain in CLASH_DIRECT_DOMAIN_SUFFIXES:
+        policy[domain] = CLASH_DOMESTIC_DNS
         policy[f"+.{domain}"] = CLASH_DOMESTIC_DNS
     for domain in CLASH_FORCE_PROXY_DOMAIN_SUFFIXES:
+        policy[domain] = CLASH_PROXY_DNS
         policy[f"+.{domain}"] = CLASH_PROXY_DNS
     return policy
 
@@ -161,6 +214,7 @@ def clash_yaml(settings: dict[str, str], user: Any) -> str:
             ],
             "enhanced-mode": "fake-ip",
             "fake-ip-range": "198.18.0.1/16",
+            "fake-ip-filter-mode": "blacklist",
             "fake-ip-filter": [
                 "*.lan",
                 "*.local",
@@ -199,10 +253,11 @@ def clash_yaml(settings: dict[str, str], user: Any) -> str:
             {
                 "name": final_group,
                 "type": "select",
-                "proxies": [group_name, "DIRECT"],
+                "proxies": [group_name],
             },
         ],
         "rules": [
+            *CLASH_UDP_REJECT_RULES,
             *build_force_proxy_rules(group_name),
             *build_direct_domain_rules(),
             *CLASH_LOCAL_DIRECT_RULES,

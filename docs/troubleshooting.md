@@ -71,6 +71,8 @@ Some clients show `UDP Proxy` or UDP ping checks, and those checks can time out 
 
 Use TCP/HTTP latency checks for this profile. If the client still shows stale `udp: true`, refresh the subscription after updating the server.
 
+Current subscriptions intentionally place `NETWORK,UDP,REJECT` before domain routing rules. This blocks WebRTC/STUN/QUIC from falling through to `DIRECT` when the TCP-only VLESS node cannot carry UDP. If a browser WebRTC leak test still shows a local or public IP, verify that the client is actually using the refreshed Clash profile, TUN mode is enabled, and browser-level WebRTC leak prevention is enabled.
+
 The current default architecture gives Xray REALITY exclusive use of `443/tcp` and exposes the admin panel on `8443/tcp`. Remove old stream split config if it still exists:
 
 ```bash

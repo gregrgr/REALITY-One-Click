@@ -273,16 +273,17 @@ https://panel.example.com:8443/sub/<token>/vless.txt
 - `proxy-groups`
 - `rules`
 - VLESS REALITY 节点使用 TCP 入站，不声明 UDP 代理能力；客户端里的 `UDP Proxy`/UDP ping 测速超时属于预期现象，请以 TCP/HTTP 延迟测试为准。
-- 本地分流规则：局域网、私有地址、本地域名、`.cn` 与常见国产系统服务域名、`GEOIP,CN` 走 `DIRECT`。
-- 强制代理规则：Claude、ChatGPT/OpenAI、Figma 相关域名始终走 `Proxy`，并且优先级高于国内直连规则；`Proxy` 分组不提供 `DIRECT` 选项。
-- DNS 防泄漏：启用 `tun.dns-hijack`、`strict-route`、`respect-rules`，默认 DNS 使用带 `#Proxy` 的 DoH，国内直连域名单独使用国内 DoH 策略。
-- 兜底策略：未命中的流量走 `Final`，默认选择 `Proxy`。
-- 内置 DNS：代理 DoH nameserver、国内直连域名 nameserver-policy、海外 fallback、fake-ip 过滤局域网域名。
+- 本地分流规则：局域网、私有地址、本地域名、`.cn`、常见国产系统服务、字节跳动、网易等国内域名走 `DIRECT`。
+- 强制代理规则：Claude/Anthropic、ChatGPT/OpenAI、Figma 相关域名始终走 `Proxy`，并且优先级高于国内直连规则；`Proxy` 和 `Final` 分组不提供 `DIRECT` 选项。
+- DNS 防泄漏：启用 `tun.dns-hijack`、`strict-route`、`respect-rules`；强制代理域名使用精确域名和 `+.` 通配的 `nameserver-policy`，并通过带 `#Proxy` 的 DoH 解析；国内直连域名单独使用国内 DoH 策略。
+- UDP/WebRTC 防泄漏：订阅首条规则为 `NETWORK,UDP,REJECT`，阻断 STUN/WebRTC/QUIC 等 UDP 直接外连。此配置优先保证不泄漏，UDP 应用可能不可用。
+- 兜底策略：未命中的 TCP 流量走 `Final`，固定选择 `Proxy`。
+- 内置 DNS：代理 DoH nameserver、强制代理/国内直连域名 nameserver-policy、海外 fallback、fake-ip 过滤局域网域名。
 - REALITY 必需参数：`servername`、`client-fingerprint`、`reality-opts.public-key`、`reality-opts.short-id`
 
 订阅不使用远程 `rule-providers`，也不使用 `GEOSITE` 规则，避免客户端/Nikki 因下载或解析 `GeoSite.dat` 失败而拒绝配置。客户端导入后即可从订阅服务器获取完整配置。
 
-DNS 防泄漏依赖客户端支持 Mihomo/Clash Meta 的 TUN 与 DNS 配置。若客户端禁用 TUN、系统私有 DNS、浏览器内置 DoH 或平台限制阻止 DNS 劫持，仍可能出现客户端侧 DNS 泄漏，需要在客户端关闭这些外部 DNS 路径。
+DNS 与 WebRTC 防泄漏依赖客户端支持 Mihomo/Clash Meta 的 TUN、DNS 和规则配置。若客户端禁用 TUN、系统私有 DNS、浏览器内置 DoH、浏览器 WebRTC 策略或平台限制阻止 DNS/UDP 劫持，仍可能出现客户端侧泄漏，需要在客户端关闭这些外部路径。
 
 ### 订阅安全
 
