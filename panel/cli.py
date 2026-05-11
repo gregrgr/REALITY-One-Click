@@ -4,6 +4,7 @@ import argparse
 import sys
 
 from .database import Database
+from .latency import probe_exit_latency
 from .service import restart_service, systemctl_is_active
 from .settings import get_runtime_settings
 from .subscriptions import vless_uri
@@ -75,6 +76,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("render")
     sub.add_parser("restart")
     sub.add_parser("status")
+    sub.add_parser("latency")
     sub.add_parser("traffic")
     sub.add_parser("reset-traffic")
 
@@ -160,6 +162,24 @@ def main(argv: list[str] | None = None) -> int:
         for service in ("xray", "nginx", "proxy-panel"):
             print(f"{service}: {systemctl_is_active(service)}")
         return 0
+
+    if args.command == "latency":
+        probe = probe_exit_latency(database.get_settings())
+        print(f"status: {probe['status']}")
+        print(f"route: {probe['route']}")
+        if probe.get("backend"):
+            print(f"backend: {probe['backend']}")
+        if probe.get("backend_tcp_ms") is not None:
+            print(f"backend-tcp: {probe['backend_tcp_ms']} ms")
+        if probe.get("exit_http_ms") is not None:
+            print(f"exit-http: {probe['exit_http_ms']} ms")
+        if probe.get("exit_ip"):
+            print(f"exit-ip: {probe['exit_ip']}")
+        if probe.get("error"):
+            print(f"error: {probe['error']}", file=sys.stderr)
+        if probe.get("ip_error"):
+            print(f"ip-error: {probe['ip_error']}", file=sys.stderr)
+        return 0 if probe["status"] == "ok" else 1
 
     if args.command in {"traffic", "reset-traffic"}:
         reset = args.command == "reset-traffic"

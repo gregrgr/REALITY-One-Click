@@ -66,6 +66,9 @@ normalize_direct_443_env() {
   EGRESS_BACKEND_PORT="${EGRESS_BACKEND_PORT:-10808}"
   EGRESS_BACKEND_PROTOCOL="${EGRESS_BACKEND_PROTOCOL:-socks}"
   TAILSCALE_REQUIRED="${TAILSCALE_REQUIRED:-yes}"
+  LATENCY_PROBE_URL="${LATENCY_PROBE_URL:-https://www.gstatic.com/generate_204}"
+  LATENCY_IP_CHECK_URL="${LATENCY_IP_CHECK_URL:-https://api.ipify.org}"
+  LATENCY_TIMEOUT_SECONDS="${LATENCY_TIMEOUT_SECONDS:-5}"
   PANEL_HTTPS_PORT="${PANEL_HTTPS_PORT:-8443}"
   XRAY_LISTEN="0.0.0.0"
   XRAY_PORT="443"
@@ -102,6 +105,7 @@ normalize_direct_443_env() {
   export PROXY_PANEL_DB PROXY_PANEL_CONFIG PROXY_PANEL_SECRET_KEY PROXY_PANEL_PUBLIC_BASE
   export NODE_ROLE EGRESS_TAILSCALE_IP EGRESS_BACKEND_PORT EGRESS_BACKEND_LISTEN
   export EGRESS_BACKEND_PROTOCOL TAILSCALE_REQUIRED
+  export LATENCY_PROBE_URL LATENCY_IP_CHECK_URL LATENCY_TIMEOUT_SECONDS
   export PANEL_DOMAIN PANEL_HTTPS_PORT PUBLIC_HOST XRAY_LISTEN XRAY_PORT XRAY_PUBLIC_PORT
 
   upsert_env_key "PROXY_PANEL_DB" "$PROXY_PANEL_DB"
@@ -119,6 +123,9 @@ normalize_direct_443_env() {
   upsert_env_key "EGRESS_BACKEND_LISTEN" "${EGRESS_BACKEND_LISTEN:-}"
   upsert_env_key "EGRESS_BACKEND_PROTOCOL" "$EGRESS_BACKEND_PROTOCOL"
   upsert_env_key "TAILSCALE_REQUIRED" "$TAILSCALE_REQUIRED"
+  upsert_env_key "LATENCY_PROBE_URL" "$LATENCY_PROBE_URL"
+  upsert_env_key "LATENCY_IP_CHECK_URL" "$LATENCY_IP_CHECK_URL"
+  upsert_env_key "LATENCY_TIMEOUT_SECONDS" "$LATENCY_TIMEOUT_SECONDS"
 }
 
 sync_database_runtime_settings() {
@@ -133,6 +140,9 @@ sync_database_runtime_settings() {
     --setting "egress_tailscale_ip=${EGRESS_TAILSCALE_IP:-}"
     --setting "egress_backend_port=${EGRESS_BACKEND_PORT:-10808}"
     --setting "egress_backend_protocol=${EGRESS_BACKEND_PROTOCOL:-socks}"
+    --setting "latency_probe_url=${LATENCY_PROBE_URL:-https://www.gstatic.com/generate_204}"
+    --setting "latency_ip_check_url=${LATENCY_IP_CHECK_URL:-https://api.ipify.org}"
+    --setting "latency_timeout_seconds=${LATENCY_TIMEOUT_SECONDS:-5}"
   )
 
   if [[ -n "${PANEL_DOMAIN:-}" ]]; then

@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse,
 from fastapi.templating import Jinja2Templates
 
 from .database import Database
+from .latency import probe_exit_latency
 from .security import load_session, sign_session, verify_password
 from .service import recent_journal, restart_service, systemctl_is_active
 from .settings import RuntimeSettings, get_runtime_settings
@@ -291,6 +292,11 @@ def api_traffic(_: dict[str, Any] = Depends(require_admin)) -> dict[str, dict[st
         }
         for name, stat in stats.items()
     }
+
+
+@app.get("/api/latency")
+def api_latency(_: dict[str, Any] = Depends(require_admin)) -> dict[str, Any]:
+    return probe_exit_latency(database.get_settings())
 
 
 @app.get("/sub/{token}/clash.yaml")

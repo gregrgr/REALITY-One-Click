@@ -338,6 +338,7 @@ bash install.sh
 
 ```bash
 proxy-panel status
+proxy-panel latency
 proxy-panel traffic
 proxy-panel reset-traffic
 proxy-panel add-user <name>

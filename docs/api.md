@@ -52,3 +52,26 @@ Example response:
   }
 }
 ```
+
+## Exit Latency
+
+```text
+GET /api/latency
+```
+
+Requires an authenticated admin session. In `single` mode the probe uses the server direct route. In `relay` mode it connects to `EGRESS_TAILSCALE_IP:EGRESS_BACKEND_PORT` as a SOCKS backend and then performs the external HTTP/TLS probe through the egress VPS, so the displayed latency is the relay-to-egress-to-Internet path rather than a local relay ping.
+
+Example response:
+
+```json
+{
+  "status": "ok",
+  "node_role": "relay",
+  "route": "relay-egress-socks",
+  "backend": "100.64.10.20:10808",
+  "backend_tcp_ms": 8,
+  "exit_http_ms": 163,
+  "exit_ip": "203.0.113.20",
+  "probe_url": "https://www.gstatic.com/generate_204"
+}
+```

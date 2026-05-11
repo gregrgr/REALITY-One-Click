@@ -155,6 +155,7 @@ On relay, confirm VLESS traffic routes to the egress outbound:
 ```bash
 jq '.routing.rules' /usr/local/etc/xray/config.json
 jq '.outbounds[] | select(.tag=="egress-via-tailscale")' /usr/local/etc/xray/config.json
+proxy-panel latency
 ```
 
 The relay should not use Tailscale exit node:

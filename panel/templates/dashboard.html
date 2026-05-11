@@ -69,6 +69,8 @@
     .stat b { display: block; margin-bottom: 6px; }
     .status { font-weight: 700; }
     .status.active { color: var(--ok); }
+    .status.ok { color: var(--ok); }
+    .status.warning, .status.skipped { color: var(--warn); }
     .status.inactive, .status.failed { color: var(--danger); }
     .message {
       padding: 10px 12px;
@@ -223,6 +225,14 @@
         <div class="stat"><b>总下载</b><span>{{ traffic_totals.downlink }}</span></div>
         <div class="stat"><b>总流量</b><span>{{ traffic_totals.total }}</span></div>
       </div>
+      <div class="summary" id="exit-latency">
+        <div class="stat"><b>出口路径</b><span id="latency-route">检测中</span></div>
+        <div class="stat"><b>后端 TCP</b><span id="latency-backend">检测中</span></div>
+        <div class="stat"><b>出口 HTTP</b><span id="latency-http">检测中</span></div>
+        <div class="stat"><b>出口 IP</b><span id="latency-ip">检测中</span></div>
+        <div class="stat"><b>探测目标</b><code id="latency-target">-</code></div>
+        <div class="stat"><b>检测状态</b><span id="latency-status" class="status warning">检测中</span></div>
+      </div>
       <div class="toolbar">
         <form class="inline" method="post" action="/xray/reload">
           <button class="primary" type="submit">重新生成并重启 Xray</button>
@@ -230,6 +240,7 @@
         <form class="inline" method="post" action="/traffic/reset">
           <button type="submit">重置流量统计</button>
         </form>
+        <button type="button" id="latency-refresh">刷新出口延迟</button>
       </div>
     </section>
 
@@ -310,5 +321,46 @@
       <pre>{{ logs['proxy-panel'] }}</pre>
     </section>
   </main>
+  <script>
+    function setText(id, value) {
+      const element = document.getElementById(id);
+      if (element) element.textContent = value;
+    }
+
+    function setLatencyStatus(state, text) {
+      const element = document.getElementById("latency-status");
+      if (!element) return;
+      element.textContent = text;
+      element.className = "status " + state;
+    }
+
+    async function refreshExitLatency() {
+      setLatencyStatus("warning", "检测中");
+      try {
+        const response = await fetch("/api/latency", { credentials: "same-origin" });
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        const data = await response.json();
+        const backend = data.backend_tcp_ms === null || data.backend_tcp_ms === undefined
+          ? "-"
+          : data.backend_tcp_ms + " ms";
+        const exitHttp = data.exit_http_ms === null || data.exit_http_ms === undefined
+          ? "-"
+          : data.exit_http_ms + " ms";
+        setText("latency-route", data.route || "-");
+        setText("latency-backend", backend);
+        setText("latency-http", exitHttp);
+        setText("latency-ip", data.exit_ip || "-");
+        setText("latency-target", data.probe_url || "-");
+        setLatencyStatus(data.status || "failed", data.error || data.status || "failed");
+      } catch (error) {
+        setText("latency-backend", "-");
+        setText("latency-http", "-");
+        setLatencyStatus("failed", "检测失败: " + error.message);
+      }
+    }
+
+    document.getElementById("latency-refresh")?.addEventListener("click", refreshExitLatency);
+    refreshExitLatency();
+  </script>
 </body>
 </html>

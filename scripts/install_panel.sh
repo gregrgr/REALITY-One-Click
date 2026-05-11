@@ -56,6 +56,9 @@ initialize_panel_data() {
     "egress_tailscale_ip=${EGRESS_TAILSCALE_IP:-}"
     "egress_backend_port=${EGRESS_BACKEND_PORT}"
     "egress_backend_protocol=${EGRESS_BACKEND_PROTOCOL}"
+    "latency_probe_url=${LATENCY_PROBE_URL}"
+    "latency_ip_check_url=${LATENCY_IP_CHECK_URL}"
+    "latency_timeout_seconds=${LATENCY_TIMEOUT_SECONDS}"
   )
 
   if [[ "$DRY_RUN" == "1" ]]; then

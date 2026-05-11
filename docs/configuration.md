@@ -26,6 +26,9 @@ The generated Xray configuration is written to `/usr/local/etc/xray/config.json`
 | `egress_backend_listen` / `EGRESS_BACKEND_LISTEN` | Egress mode bind address. Defaults to the detected `tailscale0` `100.x.x.x` address. Must not be `0.0.0.0`. |
 | `egress_backend_protocol` / `EGRESS_BACKEND_PROTOCOL` | Backend protocol between relay and egress. Defaults to `socks`; only `socks` is currently supported. |
 | `tailscale_required` / `TAILSCALE_REQUIRED` | Require `tailscale status` to work for relay/egress. Defaults to `yes`. |
+| `latency_probe_url` / `LATENCY_PROBE_URL` | URL used by the panel exit latency probe. Defaults to `https://www.gstatic.com/generate_204`. Relay mode probes through the egress SOCKS backend. |
+| `latency_ip_check_url` / `LATENCY_IP_CHECK_URL` | URL used to detect the public exit IP shown in the panel. Defaults to `https://api.ipify.org`. |
+| `latency_timeout_seconds` / `LATENCY_TIMEOUT_SECONDS` | Per-step timeout for panel latency checks. Defaults to `5`, clamped between `1` and `30`. |
 | `reality_dest` | REALITY camouflage destination, for example `www.microsoft.com:443`. |
 | `reality_server_name` | TLS SNI used by clients for REALITY. |
 | `reality_public_key` | Public key used by clients. |
