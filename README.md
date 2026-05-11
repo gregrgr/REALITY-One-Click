@@ -245,7 +245,7 @@ proxies:
     uuid: 00000000-0000-0000-0000-000000000000
     network: tcp
     tls: true
-    udp: true
+    udp: false
     flow: xtls-rprx-vision
     servername: www.microsoft.com
     client-fingerprint: chrome
@@ -272,6 +272,7 @@ https://panel.example.com:8443/sub/<token>/vless.txt
 - `proxies`
 - `proxy-groups`
 - `rules`
+- VLESS REALITY 节点使用 TCP 入站，不声明 UDP 代理能力；客户端里的 `UDP Proxy`/UDP ping 测速超时属于预期现象，请以 TCP/HTTP 延迟测试为准。
 - 本地分流规则：局域网、私有地址、本地域名和 `GEOIP,CN` 走 `DIRECT`。
 - 强制代理规则：Claude、ChatGPT/OpenAI、Figma 相关域名始终走 `Proxy`，并且优先级高于国内直连规则。
 - DNS 防泄漏：启用 `tun.dns-hijack`、`strict-route`、`respect-rules`，强制代理域名使用带 `#Proxy` 的 DoH 解析。

@@ -80,7 +80,7 @@ def build_proxy(settings: dict[str, str], user: Any) -> dict[str, Any]:
         "uuid": user["uuid"],
         "network": "tcp",
         "tls": True,
-        "udp": True,
+        "udp": False,
         "flow": "xtls-rprx-vision",
         "servername": settings.get("reality_server_name", "www.microsoft.com"),
         "client-fingerprint": settings.get("reality_fingerprint", "chrome"),

@@ -45,6 +45,7 @@ class PanelCoreTest(unittest.TestCase):
             proxy = clash["proxies"][0]
             self.assertEqual(proxy["type"], "vless")
             self.assertEqual(proxy["server"], "panel.example.com")
+            self.assertFalse(proxy["udp"])
             self.assertEqual(proxy["servername"], "www.microsoft.com")
             self.assertEqual(proxy["reality-opts"]["public-key"], "public-key")
             self.assertNotIn("rule-providers", clash)

@@ -64,6 +64,13 @@ systemctl restart xray proxy-panel nginx
 
 Then refresh the client subscription from the subscription server.
 
+## UDP Proxy Ping Timeout
+
+The default node is VLESS + REALITY over TCP on `443/tcp`; it does not listen on `443/udp`.
+Some clients show `UDP Proxy` or UDP ping checks, and those checks can time out even when normal TCP/HTTPS proxy traffic works.
+
+Use TCP/HTTP latency checks for this profile. If the client still shows stale `udp: true`, refresh the subscription after updating the server.
+
 The current default architecture gives Xray REALITY exclusive use of `443/tcp` and exposes the admin panel on `8443/tcp`. Remove old stream split config if it still exists:
 
 ```bash
