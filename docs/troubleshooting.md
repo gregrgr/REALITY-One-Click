@@ -90,6 +90,18 @@ systemctl restart xray
 ss -lntp | grep -E ':(443|10085)\b'
 ```
 
+If clients report `216.36.x.x:443 i/o timeout` while the VPS shows Xray listening on `443/tcp`, the service is up but the client path is dropping packets. Check the cloud security group, VPS firewall, and client-side route:
+
+```bash
+# On the client router, if available:
+nc -vz -w 5 <vps-public-ip> 443
+traceroute -T -p 443 <vps-public-ip>
+
+# On the VPS while the client retries:
+tcpdump -ni any 'tcp port 443'
+ufw status verbose
+```
+
 ## Regenerate Config
 
 ```bash

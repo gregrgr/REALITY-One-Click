@@ -53,10 +53,16 @@ class PanelCoreTest(unittest.TestCase):
             self.assertIn("DOMAIN-SUFFIX,chatgpt.com,Proxy", clash["rules"])
             self.assertIn("DOMAIN-SUFFIX,openai.com,Proxy", clash["rules"])
             self.assertIn("DOMAIN-SUFFIX,figma.com,Proxy", clash["rules"])
+            self.assertIn("DOMAIN-SUFFIX,cn,DIRECT", clash["rules"])
+            self.assertIn("DOMAIN-SUFFIX,allawntech.com,DIRECT", clash["rules"])
             self.assertIn("GEOIP,CN,DIRECT,no-resolve", clash["rules"])
             self.assertFalse(any(rule.startswith("GEOSITE,") for rule in clash["rules"]))
             self.assertLess(
                 clash["rules"].index("DOMAIN-SUFFIX,chatgpt.com,Proxy"),
+                clash["rules"].index("DOMAIN-SUFFIX,cn,DIRECT"),
+            )
+            self.assertLess(
+                clash["rules"].index("DOMAIN-SUFFIX,cn,DIRECT"),
                 clash["rules"].index("GEOIP,CN,DIRECT,no-resolve"),
             )
             self.assertEqual(clash["rules"][-1], "MATCH,Final")

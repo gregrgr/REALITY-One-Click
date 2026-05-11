@@ -32,6 +32,25 @@ CLASH_PROXY_DNS = [
     "https://8.8.8.8/dns-query#Proxy",
 ]
 
+CLASH_DIRECT_DOMAIN_SUFFIXES = [
+    "cn",
+    "allawnfs.com",
+    "allawntech.com",
+    "bbk.com",
+    "coloros.com",
+    "heytapmobile.com",
+    "hicloud.com",
+    "hihonor.com",
+    "honor.cn",
+    "huawei.com",
+    "mi.com",
+    "miui.com",
+    "oppo.com",
+    "vivo.com",
+    "vivo.com.cn",
+    "xiaomi.com",
+]
+
 
 CLASH_LOCAL_DIRECT_RULES = [
     "DOMAIN,localhost,DIRECT",
@@ -60,6 +79,13 @@ def build_force_proxy_rules(group_name: str) -> list[str]:
     return [
         f"DOMAIN-SUFFIX,{domain},{group_name}"
         for domain in CLASH_FORCE_PROXY_DOMAIN_SUFFIXES
+    ]
+
+
+def build_direct_domain_rules() -> list[str]:
+    return [
+        f"DOMAIN-SUFFIX,{domain},DIRECT"
+        for domain in CLASH_DIRECT_DOMAIN_SUFFIXES
     ]
 
 
@@ -170,6 +196,7 @@ def clash_yaml(settings: dict[str, str], user: Any) -> str:
         ],
         "rules": [
             *build_force_proxy_rules(group_name),
+            *build_direct_domain_rules(),
             *CLASH_LOCAL_DIRECT_RULES,
             f"MATCH,{final_group}",
         ],
