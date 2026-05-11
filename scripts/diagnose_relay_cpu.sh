@@ -55,7 +55,7 @@ fi
 
 if command_exists jq && [[ -r "${PROXY_PANEL_CONFIG:-/usr/local/etc/xray/config.json}" ]]; then
   section "xray relay routing"
-  jq '.routing.rules, .outbounds[] | select(.tag=="egress-via-tailscale")' "${PROXY_PANEL_CONFIG:-/usr/local/etc/xray/config.json}" || true
+  jq '(.routing.rules), (.outbounds[] | select(.tag=="egress-via-tailscale"))' "${PROXY_PANEL_CONFIG:-/usr/local/etc/xray/config.json}" || true
 fi
 
 if command_exists tailscale; then
