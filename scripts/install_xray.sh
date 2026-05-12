@@ -93,7 +93,6 @@ from panel.xray_config import write_xray_config
 
 
 ENV_TO_SETTING = {
-    "NODE_ROLE": "node_role",
     "XRAY_LISTEN": "xray_listen",
     "XRAY_PORT": "xray_port",
     "XRAY_API_HOST": "xray_api_host",
@@ -105,10 +104,6 @@ ENV_TO_SETTING = {
     "REALITY_SHORT_ID": "reality_short_id",
     "REALITY_SPIDER_X": "reality_spider_x",
     "REALITY_FINGERPRINT": "reality_fingerprint",
-    "EGRESS_TAILSCALE_IP": "egress_tailscale_ip",
-    "EGRESS_BACKEND_PORT": "egress_backend_port",
-    "EGRESS_BACKEND_LISTEN": "egress_backend_listen",
-    "EGRESS_BACKEND_PROTOCOL": "egress_backend_protocol",
 }
 
 settings = {

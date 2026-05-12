@@ -7,6 +7,7 @@ import yaml
 
 
 CLASH_FORCE_PROXY_DOMAIN_SUFFIXES = [
+    # AI / dev tools
     "anthropic.com",
     "anthropic.ai",
     "claude.ai",
@@ -18,10 +19,48 @@ CLASH_FORCE_PROXY_DOMAIN_SUFFIXES = [
     "oaiusercontent.com",
     "openaiapi-site.azureedge.net",
     "openaicom.imgix.net",
+    "huggingface.co",
+    "hf.co",
+    # Design
     "figma.com",
     "figma.net",
     "figmausercontent.com",
     "figstatic.com",
+    # GitHub
+    "github.com",
+    "githubusercontent.com",
+    "githubassets.com",
+    "github.io",
+    "ghcr.io",
+    # Twitter / X
+    "twitter.com",
+    "x.com",
+    "t.co",
+    "twimg.com",
+    # YouTube
+    "youtube.com",
+    "youtu.be",
+    "ytimg.com",
+    "googlevideo.com",
+    "youtube-nocookie.com",
+    # Notion
+    "notion.so",
+    "notion.site",
+    "notion.com",
+    # Discord
+    "discord.com",
+    "discord.gg",
+    "discordapp.com",
+    "discord.media",
+    "discordapp.net",
+    # Reddit
+    "reddit.com",
+    "redd.it",
+    "redditstatic.com",
+    "redditmedia.com",
+    # Telegram website (CIDR ruleset covers Telegram servers, not the web/login flow)
+    "telegram.org",
+    "t.me",
 ]
 
 CLASH_DOMESTIC_DNS = [
@@ -215,13 +254,7 @@ def build_rule_providers(settings: dict[str, str]) -> dict[str, dict[str, Any]]:
     return providers
 
 
-def ensure_client_subscription_role(settings: dict[str, str]) -> None:
-    if settings.get("node_role", "single") == "egress":
-        raise ValueError("egress node does not provide client subscriptions.")
-
-
 def build_proxy(settings: dict[str, str], user: Any) -> dict[str, Any]:
-    ensure_client_subscription_role(settings)
     name = settings.get("node_name", "vps-reality-01")
     return {
         "name": name,
@@ -243,10 +276,8 @@ def build_proxy(settings: dict[str, str], user: Any) -> dict[str, Any]:
 
 
 def clash_yaml(settings: dict[str, str], user: Any) -> str:
-    ensure_client_subscription_role(settings)
     proxy = build_proxy(settings, user)
     group_name = "Proxy"
-    direct_group = "Local"
     final_group = "Final"
     use_rule_providers = truthy(settings.get("clash_rule_providers_enabled"), default=True)
     provider_direct_rules = [
@@ -270,7 +301,17 @@ def clash_yaml(settings: dict[str, str], user: Any) -> str:
         "allow-lan": False,
         "mode": "rule",
         "log-level": "info",
-        "find-process-mode": "strict",
+        "find-process-mode": "off",
+        "sniffer": {
+            "enable": True,
+            "parse-pure-ip": True,
+            "override-destination": True,
+            "sniff": {
+                "TLS": {"ports": [443, 8443]},
+                "HTTP": {"ports": [80, 8080]},
+                "QUIC": {"ports": [443]},
+            },
+        },
         "tun": {
             "enable": True,
             "stack": "system",
@@ -328,11 +369,6 @@ def clash_yaml(settings: dict[str, str], user: Any) -> str:
                 "proxies": [proxy["name"]],
             },
             {
-                "name": direct_group,
-                "type": "select",
-                "proxies": ["DIRECT", proxy["name"]],
-            },
-            {
                 "name": final_group,
                 "type": "select",
                 "proxies": [group_name],
@@ -355,7 +391,6 @@ def clash_yaml(settings: dict[str, str], user: Any) -> str:
 
 
 def vless_uri(settings: dict[str, str], user: Any) -> str:
-    ensure_client_subscription_role(settings)
     host = settings.get("public_host", settings.get("panel_domain", "localhost"))
     port = settings.get("public_port", "443")
     params = {

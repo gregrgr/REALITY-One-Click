@@ -62,10 +62,6 @@ normalize_direct_443_env() {
     PROXY_PANEL_CONFIG="/usr/local/etc/xray/config.json"
   fi
   PROXY_PANEL_SECRET_KEY="${PROXY_PANEL_SECRET_KEY:-$(generate_password)}"
-  NODE_ROLE="${NODE_ROLE:-single}"
-  EGRESS_BACKEND_PORT="${EGRESS_BACKEND_PORT:-10808}"
-  EGRESS_BACKEND_PROTOCOL="${EGRESS_BACKEND_PROTOCOL:-socks}"
-  TAILSCALE_REQUIRED="${TAILSCALE_REQUIRED:-yes}"
   LATENCY_PROBE_URL="${LATENCY_PROBE_URL:-https://www.gstatic.com/generate_204}"
   LATENCY_IP_CHECK_URL="${LATENCY_IP_CHECK_URL:-https://api.ipify.org}"
   LATENCY_TIMEOUT_SECONDS="${LATENCY_TIMEOUT_SECONDS:-5}"
@@ -77,27 +73,19 @@ normalize_direct_443_env() {
   XRAY_LISTEN="0.0.0.0"
   XRAY_PORT="443"
   XRAY_PUBLIC_PORT="443"
-  validate_node_role
-  if [[ "$NODE_ROLE" != "single" ]]; then
-    require_tailscale_ready
-  fi
 
-  if [[ "$NODE_ROLE" == "egress" ]]; then
-    validate_tailscale_bind_ip
+  local detected_public_host
+  detected_public_host="$(detect_public_ipv4 || true)"
+  if [[ -n "$detected_public_host" ]]; then
+    PUBLIC_HOST="$detected_public_host"
+  elif [[ -z "${PUBLIC_HOST:-}" && -n "${PANEL_DOMAIN:-}" ]]; then
+    PUBLIC_HOST="$PANEL_DOMAIN"
+    warn "Could not detect public IPv4; falling back PUBLIC_HOST to PANEL_DOMAIN."
+  elif [[ -z "${PUBLIC_HOST:-}" ]]; then
+    warn "Could not detect public IPv4 and PANEL_DOMAIN is missing; keeping PUBLIC_HOST unset."
+    PUBLIC_HOST=""
   else
-    local detected_public_host
-    detected_public_host="$(detect_public_ipv4 || true)"
-    if [[ -n "$detected_public_host" ]]; then
-      PUBLIC_HOST="$detected_public_host"
-    elif [[ -z "${PUBLIC_HOST:-}" && -n "${PANEL_DOMAIN:-}" ]]; then
-      PUBLIC_HOST="$PANEL_DOMAIN"
-      warn "Could not detect public IPv4; falling back PUBLIC_HOST to PANEL_DOMAIN."
-    elif [[ -z "${PUBLIC_HOST:-}" ]]; then
-      warn "Could not detect public IPv4 and PANEL_DOMAIN is missing; keeping PUBLIC_HOST unset."
-      PUBLIC_HOST=""
-    else
-      warn "Could not detect public IPv4; keeping existing PUBLIC_HOST=$PUBLIC_HOST."
-    fi
+    warn "Could not detect public IPv4; keeping existing PUBLIC_HOST=$PUBLIC_HOST."
   fi
 
   if [[ -n "${PANEL_DOMAIN:-}" ]]; then
@@ -107,8 +95,6 @@ normalize_direct_443_env() {
   fi
 
   export PROXY_PANEL_DB PROXY_PANEL_CONFIG PROXY_PANEL_SECRET_KEY PROXY_PANEL_PUBLIC_BASE
-  export NODE_ROLE EGRESS_TAILSCALE_IP EGRESS_BACKEND_PORT EGRESS_BACKEND_LISTEN
-  export EGRESS_BACKEND_PROTOCOL TAILSCALE_REQUIRED
   export LATENCY_PROBE_URL LATENCY_IP_CHECK_URL LATENCY_TIMEOUT_SECONDS LATENCY_CACHE_SECONDS
   export CLASH_RULE_PROVIDERS_ENABLED CLASH_RULE_PROVIDER_BASE_URL CLASH_RULE_PROVIDER_INTERVAL
   export PANEL_DOMAIN PANEL_HTTPS_PORT PUBLIC_HOST XRAY_LISTEN XRAY_PORT XRAY_PUBLIC_PORT
@@ -117,17 +103,11 @@ normalize_direct_443_env() {
   upsert_env_key "PROXY_PANEL_CONFIG" "$PROXY_PANEL_CONFIG"
   upsert_env_key "PROXY_PANEL_SECRET_KEY" "$PROXY_PANEL_SECRET_KEY"
   upsert_env_key "PROXY_PANEL_PUBLIC_BASE" "$PROXY_PANEL_PUBLIC_BASE"
-  upsert_env_key "NODE_ROLE" "$NODE_ROLE"
   upsert_env_key "PANEL_HTTPS_PORT" "$PANEL_HTTPS_PORT"
   upsert_env_key "PUBLIC_HOST" "${PUBLIC_HOST:-}"
   upsert_env_key "XRAY_PUBLIC_PORT" "$XRAY_PUBLIC_PORT"
   upsert_env_key "XRAY_LISTEN" "$XRAY_LISTEN"
   upsert_env_key "XRAY_PORT" "$XRAY_PORT"
-  upsert_env_key "EGRESS_TAILSCALE_IP" "${EGRESS_TAILSCALE_IP:-}"
-  upsert_env_key "EGRESS_BACKEND_PORT" "$EGRESS_BACKEND_PORT"
-  upsert_env_key "EGRESS_BACKEND_LISTEN" "${EGRESS_BACKEND_LISTEN:-}"
-  upsert_env_key "EGRESS_BACKEND_PROTOCOL" "$EGRESS_BACKEND_PROTOCOL"
-  upsert_env_key "TAILSCALE_REQUIRED" "$TAILSCALE_REQUIRED"
   upsert_env_key "LATENCY_PROBE_URL" "$LATENCY_PROBE_URL"
   upsert_env_key "LATENCY_IP_CHECK_URL" "$LATENCY_IP_CHECK_URL"
   upsert_env_key "LATENCY_TIMEOUT_SECONDS" "$LATENCY_TIMEOUT_SECONDS"
@@ -141,14 +121,10 @@ sync_database_runtime_settings() {
   load_panel_env
 
   local setting_args=(
-    --setting "node_role=${NODE_ROLE:-single}"
     --setting "panel_https_port=${PANEL_HTTPS_PORT:-8443}"
     --setting "public_port=${XRAY_PUBLIC_PORT:-443}"
     --setting "xray_listen=${XRAY_LISTEN:-0.0.0.0}"
     --setting "xray_port=${XRAY_PORT:-443}"
-    --setting "egress_tailscale_ip=${EGRESS_TAILSCALE_IP:-}"
-    --setting "egress_backend_port=${EGRESS_BACKEND_PORT:-10808}"
-    --setting "egress_backend_protocol=${EGRESS_BACKEND_PROTOCOL:-socks}"
     --setting "latency_probe_url=${LATENCY_PROBE_URL:-https://www.gstatic.com/generate_204}"
     --setting "latency_ip_check_url=${LATENCY_IP_CHECK_URL:-https://api.ipify.org}"
     --setting "latency_timeout_seconds=${LATENCY_TIMEOUT_SECONDS:-5}"
@@ -192,18 +168,6 @@ if [[ -x /usr/local/bin/xray ]]; then
 fi
 
 normalize_direct_443_env
-
-if [[ "${NODE_ROLE:-single}" == "relay" ]]; then
-  require_relay_can_reach_egress
-fi
-
-if [[ "${NODE_ROLE:-single}" == "egress" ]]; then
-  echo "Rendering egress Xray config..."
-  render_xray_config_from_env
-  systemctl restart xray
-  echo "Egress upgrade complete."
-  exit 0
-fi
 
 echo "Updating panel files..."
 install -d -m 0755 /opt/proxy-panel

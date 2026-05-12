@@ -167,10 +167,6 @@ def main(argv: list[str] | None = None) -> int:
         probe = probe_exit_latency(database.get_settings())
         print(f"status: {probe['status']}")
         print(f"route: {probe['route']}")
-        if probe.get("backend"):
-            print(f"backend: {probe['backend']}")
-        if probe.get("backend_tcp_ms") is not None:
-            print(f"backend-tcp: {probe['backend_tcp_ms']} ms")
         if probe.get("exit_http_ms") is not None:
             print(f"exit-http: {probe['exit_http_ms']} ms")
         if probe.get("exit_ip"):

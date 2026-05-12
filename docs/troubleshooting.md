@@ -81,13 +81,7 @@ nginx -t && systemctl reload nginx
 systemctl restart xray
 ```
 
-## Relay CPU Is 100%
-
-First identify the process. On the relay VPS run:
-
-```bash
-bash scripts/diagnose_relay_cpu.sh
-```
+## High CPU Usage
 
 If `xray` is the top CPU process, check whether traffic is actually high:
 
@@ -96,7 +90,7 @@ proxy-panel traffic
 ss -Hantp | awk '{print $5}' | sed 's/\[//;s/\]//' | sed 's/:[0-9]*$//' | sort | uniq -c | sort -nr | head
 ```
 
-Relay mode still decrypts client REALITY traffic and forwards it to the egress SOCKS backend, so high throughput can saturate small VPS CPUs. Also confirm that clients have refreshed the latest subscription with `NETWORK,UDP,REJECT`; old client profiles can keep generating UDP/WebRTC/QUIC traffic.
+Decrypting REALITY traffic at high throughput can saturate small VPS CPUs. Also confirm that clients have refreshed the latest subscription with `NETWORK,UDP,REJECT`; old client profiles can keep generating UDP/WebRTC/QUIC traffic.
 
 If `proxy-panel` is the top CPU process, repeated dashboard latency checks may be involved. The panel caches `/api/latency` for `LATENCY_CACHE_SECONDS`, default `30`. Increase it if the dashboard is polled frequently:
 
@@ -104,15 +98,6 @@ If `proxy-panel` is the top CPU process, repeated dashboard latency checks may b
 sed -i 's#^LATENCY_CACHE_SECONDS=.*#LATENCY_CACHE_SECONDS=120#' /etc/proxy-panel/panel.env
 systemctl restart proxy-panel
 ```
-
-If `tailscaled` is the top CPU process, check whether relay-to-egress traffic is using DERP rather than a direct Tailscale path:
-
-```bash
-tailscale status
-tailscale netcheck
-```
-
-DERP relay paths can raise latency and CPU. Prefer VPS regions/providers that can form direct UDP paths, and make sure provider firewalls do not block Tailscale UDP.
 
 If `xray.service` is running but `443/tcp` is still not listening, check the config path used by systemd. The official Xray installer normally reads `/usr/local/etc/xray/config.json`, and the panel must render to the same file:
 
