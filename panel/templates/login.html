@@ -3,16 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Proxy Panel</title>
+  <title>Proxy Panel · 登录</title>
   <style>
     :root {
       color-scheme: light;
-      --bg: #f5f7fb;
+      --bg-grad-from: #eef2f8;
+      --bg-grad-to: #dbe5f3;
       --panel: #ffffff;
       --ink: #172033;
-      --muted: #60708a;
-      --line: #d9e1ec;
+      --muted: #62728a;
+      --line: #dde4ee;
       --accent: #0f766e;
+      --accent-dark: #0c5d56;
       --danger: #b42318;
     }
     * { box-sizing: border-box; }
@@ -21,52 +23,93 @@
       min-height: 100vh;
       display: grid;
       place-items: center;
-      background: var(--bg);
+      background: linear-gradient(180deg, var(--bg-grad-from) 0%, var(--bg-grad-to) 100%) fixed;
       color: var(--ink);
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      -webkit-font-smoothing: antialiased;
     }
     main {
       width: min(420px, calc(100vw - 32px));
       background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 28px;
-      box-shadow: 0 16px 42px rgba(31, 45, 70, 0.08);
+      border-radius: 12px;
+      padding: 32px;
+      box-shadow: 0 1px 2px rgba(31, 45, 70, 0.04), 0 20px 50px rgba(31, 45, 70, 0.10);
     }
-    h1 { margin: 0 0 24px; font-size: 24px; letter-spacing: 0; }
-    label { display: block; margin: 14px 0 6px; color: var(--muted); font-size: 14px; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .logo {
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, var(--accent), #14b8a6);
+      box-shadow: 0 2px 8px rgba(15, 118, 110, 0.35);
+    }
+    h1 { margin: 0; font-size: 22px; letter-spacing: 0; font-weight: 700; }
+    .subtitle { color: var(--muted); font-size: 13px; margin-top: 2px; }
+    label {
+      display: block;
+      margin: 14px 0 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
     input {
       width: 100%;
       height: 42px;
       border: 1px solid var(--line);
-      border-radius: 6px;
+      border-radius: 8px;
       padding: 0 12px;
       font: inherit;
+      background: #fff;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
     }
     button {
       width: 100%;
-      height: 42px;
-      margin-top: 22px;
+      height: 44px;
+      margin-top: 24px;
       border: 0;
-      border-radius: 6px;
+      border-radius: 8px;
       background: var(--accent);
       color: white;
+      font: inherit;
       font-weight: 700;
       cursor: pointer;
+      transition: background 0.15s, transform 0.06s;
+      box-shadow: 0 1px 0 rgba(15, 118, 110, 0.25);
     }
+    button:hover { background: var(--accent-dark); }
+    button:active { transform: translateY(1px); }
     .error {
       margin: 0 0 12px;
       padding: 10px 12px;
-      border-radius: 6px;
+      border-radius: 8px;
       color: var(--danger);
       background: #fff1f0;
       border: 1px solid #ffd1cc;
+      font-size: 13px;
     }
   </style>
 </head>
 <body>
   <main>
-    <h1>Proxy Panel</h1>
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div>
+        <h1>Proxy Panel</h1>
+        <div class="subtitle">登录管理后台</div>
+      </div>
+    </div>
     {% if error %}<p class="error">{{ error }}</p>{% endif %}
     <form method="post" action="/login">
       <label for="username">用户名</label>
@@ -78,4 +121,3 @@
   </main>
 </body>
 </html>
-

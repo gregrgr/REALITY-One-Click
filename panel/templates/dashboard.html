@@ -7,24 +7,38 @@
   <style>
     :root {
       color-scheme: light;
-      --bg: #f6f8fb;
+      --bg: #eef2f8;
+      --bg-grad-from: #eef2f8;
+      --bg-grad-to: #e3ebf6;
       --surface: #ffffff;
+      --surface-muted: #f7f9fc;
       --ink: #172033;
+      --ink-soft: #2a3447;
       --muted: #62728a;
-      --line: #d9e1ec;
+      --muted-soft: #8895ad;
+      --line: #dde4ee;
+      --line-soft: #ebf0f7;
       --accent: #0f766e;
-      --accent-dark: #115e59;
+      --accent-dark: #0c5d56;
+      --accent-soft: #d1fae5;
+      --accent-soft-ink: #064e40;
       --danger: #b42318;
+      --danger-soft: #fef2f0;
       --warn: #a15c07;
+      --warn-soft: #fef6e7;
       --ok: #157347;
+      --ok-soft: #ecfdf5;
       --code: #eef3f8;
+      --shadow-card: 0 1px 2px rgba(31, 45, 70, 0.04), 0 8px 24px rgba(31, 45, 70, 0.06);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      background: var(--bg);
+      min-height: 100vh;
+      background: linear-gradient(180deg, var(--bg-grad-from) 0%, var(--bg-grad-to) 100%) fixed;
       color: var(--ink);
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      -webkit-font-smoothing: antialiased;
     }
     header {
       display: flex;
@@ -34,20 +48,50 @@
       padding: 18px 28px;
       background: var(--surface);
       border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      backdrop-filter: saturate(140%) blur(6px);
     }
-    h1 { margin: 0; font-size: 22px; letter-spacing: 0; }
-    h2 { margin: 0 0 14px; font-size: 17px; letter-spacing: 0; }
+    header .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    header .brand .logo {
+      width: 28px; height: 28px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, var(--accent), #14b8a6);
+      box-shadow: 0 2px 6px rgba(15, 118, 110, 0.35);
+    }
+    h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 0; }
+    h2 {
+      margin: 0 0 14px;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    h2 .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    h3 { font-size: 13px; color: var(--muted); margin: 14px 0 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
     main {
       width: min(1180px, calc(100vw - 32px));
       margin: 24px auto 48px;
       display: grid;
-      gap: 18px;
+      gap: 16px;
     }
     section {
       background: var(--surface);
       border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 18px;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: var(--shadow-card);
     }
     .grid {
       display: grid;
@@ -63,21 +107,58 @@
     .stat {
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 12px;
+      padding: 12px 14px;
       min-height: 74px;
+      background: var(--surface-muted);
     }
-    .stat b { display: block; margin-bottom: 6px; }
-    .status { font-weight: 700; }
-    .status.active { color: var(--ok); }
-    .status.ok { color: var(--ok); }
-    .status.warning, .status.skipped { color: var(--warn); }
-    .status.inactive, .status.failed { color: var(--danger); }
+    .stat b {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .stat span, .stat code {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .stat code {
+      font-size: 13px;
+      padding: 0;
+      background: transparent;
+      word-break: break-all;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      background: var(--surface-muted);
+      color: var(--muted);
+    }
+    .status::before {
+      content: "";
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.7;
+    }
+    .status.active, .status.ok { background: var(--ok-soft); color: var(--ok); }
+    .status.warning, .status.skipped { background: var(--warn-soft); color: var(--warn); }
+    .status.inactive, .status.failed { background: var(--danger-soft); color: var(--danger); }
     .message {
-      padding: 10px 12px;
+      padding: 12px 14px;
       border: 1px solid #b7e4d8;
-      background: #ecfdf5;
-      border-radius: 6px;
+      background: linear-gradient(180deg, #ecfdf5, #d1fae5);
+      border-radius: 8px;
       color: #075e54;
+      font-weight: 600;
     }
     form.inline { display: inline; }
     form.add-user {
@@ -94,25 +175,35 @@
       display: block;
       margin-bottom: 6px;
       color: var(--muted);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
     input {
       height: 38px;
       border: 1px solid var(--line);
-      border-radius: 6px;
-      padding: 0 10px;
+      border-radius: 8px;
+      padding: 0 12px;
       font: inherit;
       width: 100%;
+      background: var(--surface);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
     }
     button, .button {
       height: 34px;
       border: 1px solid var(--line);
-      border-radius: 6px;
-      padding: 0 10px;
-      background: white;
+      border-radius: 8px;
+      padding: 0 12px;
+      background: var(--surface);
       color: var(--ink);
       font: inherit;
+      font-weight: 600;
       cursor: pointer;
       text-decoration: none;
       display: inline-flex;
@@ -120,37 +211,46 @@
       justify-content: center;
       gap: 6px;
       white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.06s;
     }
+    button:hover, .button:hover { background: var(--surface-muted); border-color: var(--muted-soft); }
+    button:active, .button:active { transform: translateY(1px); }
     button.primary {
       height: 38px;
       border-color: var(--accent);
       background: var(--accent);
       color: white;
       font-weight: 700;
+      box-shadow: 0 1px 0 rgba(15, 118, 110, 0.25);
     }
-    button.primary:hover { background: var(--accent-dark); }
-    button.danger { color: var(--danger); }
+    button.primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+    button.danger { color: var(--danger); border-color: #f1c6c0; background: var(--danger-soft); }
+    button.danger:hover { background: #fde4e1; border-color: #e8a59c; }
+    button.copied { background: var(--accent-soft); color: var(--accent-soft-ink); border-color: #98d4c0; }
     table {
       width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
     }
     th, td {
-      padding: 10px 8px;
-      border-top: 1px solid var(--line);
+      padding: 12px 10px;
+      border-top: 1px solid var(--line-soft);
       vertical-align: top;
       text-align: left;
       font-size: 14px;
     }
-    th { color: var(--muted); font-weight: 700; }
+    th { color: var(--muted); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+    tbody tr:hover { background: var(--surface-muted); }
     code, pre {
       background: var(--code);
       border-radius: 6px;
       font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
     }
     code {
-      padding: 2px 5px;
+      padding: 2px 6px;
       word-break: break-all;
+      font-size: 13px;
+      color: var(--ink-soft);
     }
     pre {
       margin: 0;
@@ -159,50 +259,187 @@
       max-height: 260px;
       white-space: pre-wrap;
       color: #304057;
+      font-size: 12px;
+      line-height: 1.5;
     }
-    .links {
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .settings {
       display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 16px;
+      margin-top: 16px;
+    }
+    .settings div {
+      border-top: 1px solid var(--line-soft);
+      padding-top: 8px;
+      min-width: 0;
+    }
+    .settings b { color: var(--muted); display: block; margin-bottom: 4px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    /* Subscription cell */
+    .sub-list {
+      display: grid;
+      gap: 12px;
+    }
+    .sub-item {
+      background: var(--surface-muted);
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .sub-item-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .sub-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border-radius: 999px;
+      padding: 2px 8px;
+    }
+    .sub-url {
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      word-break: break-all;
+      line-height: 1.5;
+      display: block;
+      margin-bottom: 8px;
+    }
+    .sub-actions {
+      display: flex;
+      flex-wrap: wrap;
       gap: 6px;
+    }
+    .sub-actions button, .sub-actions summary {
+      height: 28px;
+      padding: 0 10px;
+      font-size: 12px;
+      border-radius: 6px;
+    }
+    .qr-toggle { display: inline; }
+    .qr-toggle summary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      font: inherit;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      list-style: none;
+      user-select: none;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .qr-toggle summary::-webkit-details-marker { display: none; }
+    .qr-toggle summary::before { content: "▸"; font-size: 9px; opacity: 0.5; transition: transform 0.15s; }
+    .qr-toggle[open] summary::before { transform: rotate(90deg); }
+    .qr-toggle summary:hover { background: var(--surface-muted); border-color: var(--muted-soft); }
+    .qr-panel {
+      margin-top: 10px;
+      padding: 14px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: max-content;
+      max-width: 100%;
+      box-shadow: var(--shadow-card);
+    }
+    .qr-panel svg {
+      width: 200px;
+      height: 200px;
+      display: block;
+    }
+    .qr-caption {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+    }
+    /* Username/uuid cell */
+    .user-name {
+      font-weight: 700;
+      color: var(--ink);
+      display: block;
+      margin-bottom: 6px;
+    }
+    .user-uuid {
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      color: var(--muted);
+      word-break: break-all;
+    }
+    /* Traffic cell */
+    .traffic-total {
+      font-weight: 700;
+      font-size: 15px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .traffic-line {
+      font-size: 12px;
+      color: var(--muted);
+      display: block;
     }
     .actions {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
     }
-    .toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 14px;
+    .empty-users {
+      padding: 28px 12px;
+      text-align: center;
+      color: var(--muted);
+      border-top: 1px solid var(--line-soft);
+      font-size: 13px;
     }
-    .settings {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px 16px;
-      margin-top: 14px;
-    }
-    .settings div {
-      border-top: 1px solid var(--line);
-      padding-top: 8px;
-      min-width: 0;
-    }
-    .settings b { color: var(--muted); display: block; margin-bottom: 3px; }
     @media (max-width: 860px) {
-      header { padding: 16px; }
-      .grid, .settings { grid-template-columns: 1fr; }
+      header { padding: 14px 16px; }
+      main { margin: 16px auto 32px; gap: 12px; }
+      section { padding: 16px; border-radius: 10px; }
+      .grid, .settings, .summary { grid-template-columns: 1fr; }
       table, thead, tbody, tr, th, td { display: block; }
       thead { display: none; }
-      tr { border-top: 1px solid var(--line); padding: 10px 0; }
+      tr { border-top: 1px solid var(--line); padding: 12px 0; }
       td { border: 0; padding: 6px 0; }
+      td::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 4px;
+      }
       form.add-user { flex-direction: column; }
       form.settings-form { grid-template-columns: 1fr; }
       button.primary, input { width: 100%; }
+      .qr-panel svg { width: 180px; height: 180px; }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>Proxy Panel</h1>
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <h1>Proxy Panel</h1>
+    </div>
     <form method="post" action="/logout">
       <button type="submit">退出</button>
     </form>
@@ -211,7 +448,7 @@
     {% if message %}<div class="message">{{ message }}</div>{% endif %}
 
     <section>
-      <h2>服务状态</h2>
+      <h2><span class="dot"></span>服务状态</h2>
       <div class="grid">
         {% for name, state in services.items() %}
         <div class="stat">
@@ -227,7 +464,6 @@
       </div>
       <div class="summary" id="exit-latency">
         <div class="stat"><b>出口路径</b><span id="latency-route">检测中</span></div>
-        <div class="stat"><b>后端 TCP</b><span id="latency-backend">检测中</span></div>
         <div class="stat"><b>出口 HTTP</b><span id="latency-http">检测中</span></div>
         <div class="stat"><b>出口 IP</b><span id="latency-ip">检测中</span></div>
         <div class="stat"><b>探测目标</b><code id="latency-target">-</code></div>
@@ -245,7 +481,7 @@
     </section>
 
     <section>
-      <h2>节点设置</h2>
+      <h2><span class="dot"></span>节点设置</h2>
       <form class="settings-form" method="post" action="/settings">
         <div class="field"><label for="node_name">节点名</label><input id="node_name" name="node_name" value="{{ settings.node_name }}" required></div>
         <div class="field"><label for="public_host">客户端地址</label><input id="public_host" name="public_host" value="{{ settings.public_host }}" required></div>
@@ -264,7 +500,7 @@
     </section>
 
     <section>
-      <h2>用户</h2>
+      <h2><span class="dot"></span>用户</h2>
       <form class="add-user" method="post" action="/users">
         <input name="name" placeholder="用户名" autocomplete="off" required>
         <button class="primary" type="submit">新增用户</button>
@@ -274,32 +510,51 @@
           <tr>
             <th style="width: 14%">名称</th>
             <th style="width: 18%">UUID</th>
-            <th style="width: 16%">流量</th>
-            <th style="width: 32%">订阅</th>
+            <th style="width: 14%">流量</th>
+            <th style="width: 34%">订阅</th>
             <th style="width: 20%">操作</th>
           </tr>
         </thead>
         <tbody>
           {% for user in users %}
           <tr>
-            <td>
-              <b>{{ user.name }}</b><br>
+            <td data-label="名称">
+              <span class="user-name">{{ user.name }}</span>
               <span class="status {{ 'active' if user.enabled else 'inactive' }}">{{ '启用' if user.enabled else '禁用' }}</span>
             </td>
-            <td><code>{{ user.uuid }}</code></td>
-            <td>
-              <b>{{ user.traffic_total_human }}</b><br>
-              <span>↑ {{ user.traffic_uplink_human }}</span><br>
-              <span>↓ {{ user.traffic_downlink_human }}</span>
+            <td data-label="UUID"><span class="user-uuid">{{ user.uuid }}</span></td>
+            <td data-label="流量">
+              <span class="traffic-total">{{ user.traffic_total_human }}</span>
+              <span class="traffic-line">↑ {{ user.traffic_uplink_human }}</span>
+              <span class="traffic-line">↓ {{ user.traffic_downlink_human }}</span>
             </td>
-            <td>
-              <div class="links">
-                <a href="{{ user.clash_url }}">Clash</a>
-                <a href="{{ user.vless_sub_url }}">VLESS</a>
-                <code>{{ user.vless_uri }}</code>
+            <td data-label="订阅">
+              <div class="sub-list">
+                <div class="sub-item">
+                  <div class="sub-item-head"><span class="sub-label">Clash</span></div>
+                  <a class="sub-url" href="{{ user.clash_url }}" target="_blank" rel="noopener">{{ user.clash_url }}</a>
+                  <div class="sub-actions">
+                    <button type="button" data-copy="{{ user.clash_url }}">复制链接</button>
+                    <details class="qr-toggle">
+                      <summary>二维码</summary>
+                      <div class="qr-panel">{{ user.clash_qr_svg|safe }}<span class="qr-caption">扫码导入 Clash / Mihomo 订阅</span></div>
+                    </details>
+                  </div>
+                </div>
+                <div class="sub-item">
+                  <div class="sub-item-head"><span class="sub-label">VLESS URI</span></div>
+                  <a class="sub-url" href="{{ user.vless_uri }}">{{ user.vless_uri }}</a>
+                  <div class="sub-actions">
+                    <button type="button" data-copy="{{ user.vless_uri }}">复制链接</button>
+                    <details class="qr-toggle">
+                      <summary>二维码</summary>
+                      <div class="qr-panel">{{ user.vless_qr_svg|safe }}<span class="qr-caption">扫码导入 v2rayN / Nikki 等客户端</span></div>
+                    </details>
+                  </div>
+                </div>
               </div>
             </td>
-            <td>
+            <td data-label="操作">
               <div class="actions">
                 <form class="inline" method="post" action="/users/{{ user.id }}/toggle"><button type="submit">{{ '禁用' if user.enabled else '启用' }}</button></form>
                 <form class="inline" method="post" action="/users/{{ user.id }}/reset-token"><button type="submit">重置订阅</button></form>
@@ -308,13 +563,15 @@
               </div>
             </td>
           </tr>
+          {% else %}
+          <tr><td colspan="5" class="empty-users">还没有用户。在上方输入名称后点击「新增用户」开始。</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </section>
 
     <section>
-      <h2>最近日志</h2>
+      <h2><span class="dot"></span>最近日志</h2>
       <h3>Xray</h3>
       <pre>{{ logs.xray }}</pre>
       <h3>Proxy Panel</h3>
@@ -340,20 +597,15 @@
         const response = await fetch("/api/latency", { credentials: "same-origin" });
         if (!response.ok) throw new Error("HTTP " + response.status);
         const data = await response.json();
-        const backend = data.backend_tcp_ms === null || data.backend_tcp_ms === undefined
-          ? "-"
-          : data.backend_tcp_ms + " ms";
         const exitHttp = data.exit_http_ms === null || data.exit_http_ms === undefined
           ? "-"
           : data.exit_http_ms + " ms";
         setText("latency-route", data.route || "-");
-        setText("latency-backend", backend);
         setText("latency-http", exitHttp);
         setText("latency-ip", data.exit_ip || "-");
         setText("latency-target", data.probe_url || "-");
         setLatencyStatus(data.status || "failed", data.error || data.status || "failed");
       } catch (error) {
-        setText("latency-backend", "-");
         setText("latency-http", "-");
         setLatencyStatus("failed", "检测失败: " + error.message);
       }
@@ -361,6 +613,39 @@
 
     document.getElementById("latency-refresh")?.addEventListener("click", refreshExitLatency);
     refreshExitLatency();
+
+    document.addEventListener("click", (event) => {
+      const target = event.target.closest("[data-copy]");
+      if (!target) return;
+      const value = target.getAttribute("data-copy");
+      const restore = (text, ok) => {
+        const original = target.dataset.originalLabel || target.textContent;
+        target.dataset.originalLabel = original;
+        target.textContent = text;
+        target.classList.toggle("copied", ok);
+        setTimeout(() => {
+          target.textContent = target.dataset.originalLabel;
+          target.classList.remove("copied");
+        }, 1400);
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(value).then(() => restore("已复制", true), () => restore("复制失败", false));
+      } else {
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = value;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          const ok = document.execCommand("copy");
+          document.body.removeChild(ta);
+          restore(ok ? "已复制" : "复制失败", ok);
+        } catch (e) {
+          restore("复制失败", false);
+        }
+      }
+    });
   </script>
 </body>
 </html>

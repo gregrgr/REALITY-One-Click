@@ -10,6 +10,7 @@ from fastapi.templating import Jinja2Templates
 
 from .database import Database
 from .latency import probe_exit_latency_cached
+from .qr import qr_svg
 from .security import load_session, sign_session, verify_password
 from .service import recent_journal, restart_service, systemctl_is_active
 from .settings import RuntimeSettings, get_runtime_settings
@@ -78,6 +79,8 @@ def dashboard_context(request: Request, message: str | None = None) -> dict[str,
         user["clash_url"] = f"{base}/sub/{row['subscription_token']}/clash.yaml"
         user["vless_sub_url"] = f"{base}/sub/{row['subscription_token']}/vless.txt"
         user["vless_uri"] = vless_uri(settings, row)
+        user["clash_qr_svg"] = qr_svg(user["clash_url"])
+        user["vless_qr_svg"] = qr_svg(user["vless_uri"])
         user["traffic_uplink"] = user_traffic.uplink if user_traffic else 0
         user["traffic_downlink"] = user_traffic.downlink if user_traffic else 0
         user["traffic_total"] = user_traffic.total if user_traffic else 0
